@@ -1,9 +1,18 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { User, Building, UserRole } from '@/types';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+
+interface Building {
+  id: string;
+  name: string;
+  address: string;
+  region: string;
+  documentsCount: number;
+  status: 'online' | 'warning' | 'offline';
+}
+
+type UserRole = 'admin' | 'technician' | 'client';
 
 interface AppContextType {
-  currentUser: User | null;
-  setCurrentUser: (user: User | null) => void;
   selectedBuilding: Building | null;
   setSelectedBuilding: (building: Building | null) => void;
   buildings: Building[];
@@ -13,7 +22,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Mock data for demo
+// Mock buildings data - in production, this would come from the database
 const mockBuildings: Building[] = [
   {
     id: '1',
@@ -49,49 +58,28 @@ const mockBuildings: Building[] = [
   },
 ];
 
-const mockUsers: Record<UserRole, User> = {
-  admin: {
-    id: 'admin-1',
-    name: 'Sarah Mitchell',
-    email: 'sarah.mitchell@mechps.com.au',
-    role: 'admin',
-    buildings: ['1', '2', '3', '4'],
-    createdAt: new Date('2024-01-15'),
-  },
-  technician: {
-    id: 'tech-1',
-    name: 'James Carter',
-    email: 'james.carter@mechps.com.au',
-    role: 'technician',
-    buildings: ['1', '2', '3', '4'],
-    region: 'WA',
-    createdAt: new Date('2024-03-10'),
-  },
-  client: {
-    id: 'client-1',
-    name: 'Emily Chen',
-    email: 'emily.chen@westfield.com.au',
-    role: 'client',
-    buildings: ['1'],
-    createdAt: new Date('2024-06-01'),
-  },
-};
-
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(mockUsers.admin);
-  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(mockBuildings[0]);
+  const { profile, role } = useAuth();
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Filter buildings based on user access
-  const accessibleBuildings = currentUser
-    ? mockBuildings.filter((b) => currentUser.buildings.includes(b.id))
-    : [];
+  // Filter buildings based on user's profile buildings array
+  const accessibleBuildings = profile?.buildings?.length 
+    ? mockBuildings.filter((b) => profile.buildings.includes(b.id))
+    : role === 'admin' 
+      ? mockBuildings 
+      : [];
+
+  // Set default building when user logs in
+  useEffect(() => {
+    if (accessibleBuildings.length > 0 && !selectedBuilding) {
+      setSelectedBuilding(accessibleBuildings[0]);
+    }
+  }, [accessibleBuildings, selectedBuilding]);
 
   return (
     <AppContext.Provider
       value={{
-        currentUser,
-        setCurrentUser,
         selectedBuilding,
         setSelectedBuilding,
         buildings: accessibleBuildings,
@@ -112,4 +100,5 @@ export function useApp() {
   return context;
 }
 
-export { mockUsers, mockBuildings };
+export { mockBuildings };
+export type { Building, UserRole };

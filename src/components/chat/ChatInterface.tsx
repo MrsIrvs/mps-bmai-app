@@ -5,6 +5,7 @@ import { ChatMessage as ChatMessageType } from '@/types';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -33,7 +34,8 @@ const samplePrompts = {
 };
 
 export function ChatInterface() {
-  const { currentUser, selectedBuilding } = useApp();
+  const { selectedBuilding } = useApp();
+  const { profile, role } = useAuth();
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -47,7 +49,7 @@ export function ChatInterface() {
   }, [messages]);
 
   const handleSendMessage = async (content: string) => {
-    if (!currentUser || !selectedBuilding) return;
+    if (!profile || !selectedBuilding || !role) return;
 
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
@@ -64,7 +66,7 @@ export function ChatInterface() {
       const assistantMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: getSimulatedResponse(content, currentUser.role),
+        content: getSimulatedResponse(content, role),
         timestamp: new Date(),
         sources: Math.random() > 0.5 ? [
           { documentName: 'HVAC O&M Manual', section: 'Troubleshooting', page: 47 },
@@ -80,7 +82,7 @@ export function ChatInterface() {
     handleSendMessage(prompt);
   };
 
-  if (!currentUser || !selectedBuilding) {
+  if (!profile || !selectedBuilding || !role) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <p className="text-muted-foreground">Please select a building to start chatting</p>
@@ -88,7 +90,7 @@ export function ChatInterface() {
     );
   }
 
-  const prompts = samplePrompts[currentUser.role];
+  const prompts = samplePrompts[role];
 
   return (
     <div className="flex flex-col h-full">
@@ -108,11 +110,11 @@ export function ChatInterface() {
             </div>
           </div>
           <Badge variant="secondary" className={cn(
-            currentUser.role === 'admin' && 'role-badge-admin',
-            currentUser.role === 'technician' && 'role-badge-technician',
-            currentUser.role === 'client' && 'role-badge-client',
+            role === 'admin' && 'role-badge-admin',
+            role === 'technician' && 'role-badge-technician',
+            role === 'client' && 'role-badge-client',
           )}>
-            {currentUser.role === 'client' ? 'FM Mode' : `${currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)} Mode`}
+            {role === 'client' ? 'FM Mode' : `${role.charAt(0).toUpperCase() + role.slice(1)} Mode`}
           </Badge>
         </div>
       </div>
@@ -131,7 +133,7 @@ export function ChatInterface() {
               </div>
               <h3 className="text-xl font-semibold mb-3">How can I help you today?</h3>
               <p className="text-muted-foreground max-w-lg mx-auto mb-8">
-                {roleGreetings[currentUser.role]}
+                {roleGreetings[role]}
               </p>
 
               {/* Sample prompts */}

@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { DocumentCard } from '@/components/documents/DocumentCard';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,8 @@ const mockDocuments: Document[] = [
 ];
 
 export default function DocumentsPage() {
-  const { selectedBuilding, currentUser } = useApp();
+  const { selectedBuilding } = useApp();
+  const { role } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -114,7 +116,7 @@ export default function DocumentsPage() {
                 O&M manuals and technical documentation for {selectedBuilding?.name}
               </p>
             </div>
-            {currentUser?.role === 'admin' && <DocumentUpload />}
+            {role === 'admin' && <DocumentUpload />}
           </div>
         </motion.div>
 

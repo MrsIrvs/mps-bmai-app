@@ -12,6 +12,7 @@ import {
   Menu,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -60,11 +61,16 @@ const roleBadgeClass = {
 
 export function AppSidebar() {
   const location = useLocation();
-  const { currentUser, selectedBuilding, buildings, setSelectedBuilding, sidebarOpen, setSidebarOpen } = useApp();
+  const { selectedBuilding, buildings, setSelectedBuilding, sidebarOpen, setSidebarOpen } = useApp();
+  const { profile, role, signOut } = useAuth();
 
-  if (!currentUser) return null;
+  if (!profile || !role) return null;
 
-  const navItems = navigation[currentUser.role];
+  const navItems = navigation[role];
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <>
@@ -180,15 +186,14 @@ export function AppSidebar() {
                 className="w-full justify-start text-left h-auto py-3 px-3 hover:bg-sidebar-accent"
               >
                 <Avatar className="h-9 w-9 mr-3">
-                  <AvatarImage src={currentUser.avatar} />
                   <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-sm">
-                    {currentUser.name.split(' ').map((n) => n[0]).join('')}
+                    {profile.full_name.split(' ').map((n) => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate">{currentUser.name}</p>
-                  <Badge variant="secondary" className={cn('text-xs mt-1', roleBadgeClass[currentUser.role])}>
-                    {roleLabels[currentUser.role]}
+                  <p className="font-medium text-sm truncate">{profile.full_name}</p>
+                  <Badge variant="secondary" className={cn('text-xs mt-1', roleBadgeClass[role])}>
+                    {roleLabels[role]}
                   </Badge>
                 </div>
               </Button>
@@ -199,7 +204,7 @@ export function AppSidebar() {
                 Account Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
               </DropdownMenuItem>

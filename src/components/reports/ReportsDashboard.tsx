@@ -9,7 +9,6 @@ import {
   Clock,
   Download,
 } from 'lucide-react';
-import { useApp } from '@/contexts/AppContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,8 +42,6 @@ const activityIcons = {
 };
 
 export function ReportsDashboard() {
-  const { currentUser } = useApp();
-
   return (
     <div className="space-y-6">
       {/* Period Selector */}

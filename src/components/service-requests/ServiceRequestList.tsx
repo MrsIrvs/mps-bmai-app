@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { ServiceRequest } from '@/types';
 import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -84,13 +85,14 @@ const mockRequests: ServiceRequest[] = [
 ];
 
 export function ServiceRequestList() {
-  const { currentUser, selectedBuilding } = useApp();
+  const { selectedBuilding } = useApp();
+  const { role } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<string>('medium');
 
   // Filter requests based on building for clients
-  const filteredRequests = currentUser?.role === 'client'
+  const filteredRequests = role === 'client'
     ? mockRequests.filter((r) => r.buildingId === selectedBuilding?.id)
     : mockRequests;
 
@@ -104,7 +106,7 @@ export function ServiceRequestList() {
   return (
     <div className="space-y-6">
       {/* New Request Form */}
-      {currentUser?.role === 'client' && (
+      {role === 'client' && (
         <Card className="border-accent/20">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">

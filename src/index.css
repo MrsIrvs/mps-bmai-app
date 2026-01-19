@@ -2,120 +2,120 @@
 @tailwind components;
 @tailwind utilities;
 
-/* BMAI Design System - Industrial Professional Theme */
+/* MPS BMAI Design System - Official Brand Guidelines */
 
 @layer base {
   :root {
-    /* Core backgrounds */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* MPS Core Backgrounds */
+    --background: 0 0% 95%; /* White Smoke #f2f2f2 */
+    --foreground: 345 8% 13%; /* Midnight #241f21 */
 
     /* Cards and surfaces */
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 345 8% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 345 8% 13%;
 
-    /* Primary - Deep Navy */
-    --primary: 222 47% 20%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary - MPS Royal Blue */
+    --primary: 230 100% 45%; /* #002be3 */
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Slate */
-    --secondary: 215 20% 93%;
-    --secondary-foreground: 222 47% 20%;
+    /* Secondary - Airy Blue */
+    --secondary: 211 94% 90%; /* #cce3fc */
+    --secondary-foreground: 345 8% 13%;
 
     /* Muted surfaces */
-    --muted: 215 20% 95%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 211 94% 95%;
+    --muted-foreground: 345 8% 40%;
 
-    /* Accent - Industrial Orange */
-    --accent: 24 95% 53%;
+    /* Accent - MPS Royal Blue (brand consistency) */
+    --accent: 230 100% 45%;
     --accent-foreground: 0 0% 100%;
 
-    /* Destructive */
-    --destructive: 0 84% 60%;
+    /* Destructive - Tart Red */
+    --destructive: 0 100% 70%; /* #FF6666 */
     --destructive-foreground: 0 0% 100%;
 
-    /* Success */
-    --success: 142 71% 45%;
+    /* Success - Gaele Green */
+    --success: 86 56% 52%; /* #8ac740 */
     --success-foreground: 0 0% 100%;
 
-    /* Warning */
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    /* Warning - Cyber Yellow */
+    --warning: 43 100% 48%; /* #f5b200 */
+    --warning-foreground: 345 8% 13%;
 
-    /* Info */
-    --info: 199 89% 48%;
+    /* Info - Turquoise */
+    --info: 181 94% 42%; /* #0dc7cc */
     --info-foreground: 0 0% 100%;
 
     /* Borders and inputs */
-    --border: 215 20% 88%;
-    --input: 215 20% 88%;
-    --ring: 24 95% 53%;
+    --border: 211 30% 85%;
+    --input: 211 30% 85%;
+    --ring: 230 100% 45%;
 
     --radius: 0.625rem;
 
-    /* Sidebar */
-    --sidebar-background: 222 47% 14%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-primary: 24 95% 53%;
+    /* Sidebar - MPS Midnight theme */
+    --sidebar-background: 345 8% 13%; /* Midnight #241f21 */
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 230 100% 45%; /* Royal Blue */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 20%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 40% 22%;
-    --sidebar-ring: 24 95% 53%;
+    --sidebar-accent: 345 8% 20%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 345 8% 25%;
+    --sidebar-ring: 230 100% 45%;
 
-    /* Role Colors */
-    --role-admin: 280 60% 50%;
-    --role-technician: 199 89% 48%;
-    --role-client: 142 71% 45%;
+    /* Role Colors - MPS Service Palette */
+    --role-admin: 230 100% 45%; /* Royal Blue */
+    --role-technician: 181 94% 42%; /* Turquoise */
+    --role-client: 86 56% 52%; /* Gaele Green */
 
-    /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(222 47% 20%), hsl(222 47% 28%));
-    --gradient-accent: linear-gradient(135deg, hsl(24 95% 53%), hsl(32 95% 58%));
-    --gradient-sidebar: linear-gradient(180deg, hsl(222 47% 14%), hsl(222 47% 11%));
+    /* MPS Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(210 98% 49%), hsl(230 100% 45%), hsl(210 80% 33%));
+    --gradient-light: linear-gradient(135deg, hsl(0 0% 95%), hsl(211 94% 90%));
+    --gradient-sidebar: linear-gradient(180deg, hsl(345 8% 15%), hsl(345 8% 11%));
     
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    --shadow-accent: 0 4px 14px 0 hsl(24 95% 53% / 0.25);
+    --shadow-accent: 0 4px 14px 0 hsl(230 100% 45% / 0.25);
   }
 
   .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 96%;
+    --background: 345 8% 8%;
+    --foreground: 0 0% 95%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 96%;
+    --card: 345 8% 11%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 96%;
+    --popover: 345 8% 11%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 24 95% 53%;
+    --primary: 230 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 18%;
-    --secondary-foreground: 210 40% 96%;
+    --secondary: 345 8% 18%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 222 47% 15%;
-    --muted-foreground: 215 20% 60%;
+    --muted: 345 8% 15%;
+    --muted-foreground: 345 8% 60%;
 
-    --accent: 24 95% 53%;
+    --accent: 230 100% 50%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 40% 20%;
-    --input: 222 40% 20%;
-    --ring: 24 95% 53%;
+    --border: 345 8% 20%;
+    --input: 345 8% 20%;
+    --ring: 230 100% 50%;
 
-    --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 210 40% 96%;
-    --sidebar-accent: 222 47% 14%;
+    --sidebar-background: 345 8% 6%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-accent: 345 8% 12%;
   }
 }
 
@@ -149,17 +149,17 @@
 }
 
 @layer components {
-  /* Role badges */
+  /* MPS Role badges */
   .role-badge-admin {
-    @apply bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300;
+    @apply bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary;
   }
   
   .role-badge-technician {
-    @apply bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300;
+    @apply bg-info/10 text-info dark:bg-info/20 dark:text-info;
   }
   
   .role-badge-client {
-    @apply bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300;
+    @apply bg-success/10 text-success dark:bg-success/20 dark:text-success;
   }
 
   /* Card hover effect */

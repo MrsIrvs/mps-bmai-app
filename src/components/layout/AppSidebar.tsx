@@ -1,7 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Building2,
   MessageSquare,
   FileText,
   Users,
@@ -24,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import mpsLogo from '@/assets/mps-logo.png';
 
 const navigation = {
   admin: [
@@ -98,13 +98,11 @@ export function AppSidebar() {
         )}
         style={{ background: 'var(--gradient-sidebar)' }}
       >
-        {/* Logo */}
+        {/* MPS Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-sidebar-border">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sidebar-primary">
-            <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
-          </div>
+          <img src={mpsLogo} alt="MPS Logo" className="h-10 w-auto" />
           <div>
-            <h1 className="font-bold text-lg tracking-tight">BMAI</h1>
+            <h1 className="font-heading font-semibold text-lg tracking-tight">BMAI</h1>
             <p className="text-xs text-sidebar-foreground/60">Building Manager AI</p>
           </div>
         </div>

@@ -1,12 +1,11 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, Shield, Wrench, Users, ArrowRight, Sparkles } from 'lucide-react';
+import { Shield, Wrench, Users, ArrowRight, Sparkles } from 'lucide-react';
 import { useApp, mockUsers } from '@/contexts/AppContext';
 import { UserRole } from '@/types';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import mpsLogo from '@/assets/mps-logo.png';
 
 const roleCards: { role: UserRole; title: string; description: string; icon: typeof Users; features: string[] }[] = [
   {
@@ -48,12 +47,12 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background font-body">
       {/* Hero */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute inset-0" style={{ background: 'var(--gradient-light)' }} />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/30 rounded-full blur-3xl" />
         
         <div className="relative max-w-6xl mx-auto px-6 py-20 lg:py-32">
           <motion.div
@@ -62,29 +61,25 @@ export default function Index() {
             className="text-center"
           >
             <div className="flex justify-center mb-6">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent shadow-accent">
-                <Building2 className="h-8 w-8 text-accent-foreground" />
-              </div>
+              <img src={mpsLogo} alt="MPS Logo" className="h-20 w-auto" />
             </div>
             
-            <Badge variant="secondary" className="mb-4 gap-1.5">
+            <Badge variant="secondary" className="mb-4 gap-1.5 bg-primary/10 text-primary border-0">
               <Sparkles className="h-3 w-3" />
               AI-Powered Building Management
             </Badge>
             
-            <h1 className="text-4xl lg:text-5xl font-bold tracking-tight mb-4">
+            <h1 className="text-4xl lg:text-5xl font-heading font-semibold tracking-tight mb-4 text-foreground">
               Building Manager AI Assistant
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8 font-body">
               Your intelligent assistant for facilities management, technical troubleshooting, 
               and O&M documentation. Select a role to experience the system.
             </p>
 
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                <span className="font-bold text-foreground">MPS</span>
-              </div>
-              <span>Mechanical Project Services</span>
+            <div className="flex items-center justify-center gap-3 text-sm text-muted-foreground">
+              <span className="font-medium">Powered by</span>
+              <span className="font-heading font-semibold text-foreground">Mechanical Project Services</span>
             </div>
           </motion.div>
         </div>
@@ -98,8 +93,8 @@ export default function Index() {
           transition={{ delay: 0.2 }}
           className="text-center mb-10"
         >
-          <h2 className="text-2xl font-bold mb-2">Select Your Role</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-2xl font-heading font-semibold mb-2">Select Your Role</h2>
+          <p className="text-muted-foreground font-body">
             Choose how you want to experience the BMAI system
           </p>
         </motion.div>
@@ -124,9 +119,9 @@ export default function Index() {
                 <div className="flex items-center gap-4 mb-4">
                   <div className={cn(
                     'flex h-12 w-12 items-center justify-center rounded-xl transition-colors',
-                    card.role === 'admin' && 'bg-purple-100 text-purple-600 group-hover:bg-purple-200',
-                    card.role === 'technician' && 'bg-blue-100 text-blue-600 group-hover:bg-blue-200',
-                    card.role === 'client' && 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200',
+                    card.role === 'admin' && 'bg-primary/10 text-primary group-hover:bg-primary/20',
+                    card.role === 'technician' && 'bg-info/10 text-info group-hover:bg-info/20',
+                    card.role === 'client' && 'bg-success/10 text-success group-hover:bg-success/20',
                   )}>
                     <card.icon className="h-6 w-6" />
                   </div>

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 interface Building {
   id: string;
@@ -26,6 +25,34 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Placeholder buildings until the buildings table is created
+const PLACEHOLDER_BUILDINGS: Building[] = [
+  {
+    id: 'building-1',
+    name: 'Perth CBD Tower',
+    address: '100 St Georges Terrace, Perth WA 6000',
+    region: 'WA',
+    documentsCount: 12,
+    status: 'online',
+  },
+  {
+    id: 'building-2',
+    name: 'Fremantle Maritime Centre',
+    address: '45 Mews Road, Fremantle WA 6160',
+    region: 'WA',
+    documentsCount: 8,
+    status: 'warning',
+  },
+  {
+    id: 'building-3',
+    name: 'Melbourne Central Plaza',
+    address: '211 La Trobe Street, Melbourne VIC 3000',
+    region: 'VIC',
+    documentsCount: 15,
+    status: 'online',
+  },
+];
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const { profile, role } = useAuth();
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
@@ -34,69 +61,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Fetch buildings from Supabase
+  // Fetch buildings - uses placeholder data until buildings table exists
   const fetchBuildings = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching buildings from Supabase...');
+      // TODO: Replace with actual Supabase query when buildings table is created
+      // For now, use placeholder data
+      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate network delay
+      setBuildings(PLACEHOLDER_BUILDINGS);
 
-      // Query buildings table
-      const { data: buildingsData, error: fetchError } = await supabase
-        .from('buildings')
-        .select(`
-          building_id,
-          building_name,
-          address,
-          region,
-          status,
-          client_user_ids,
-          tech_user_ids
-        `)
-        .eq('status', 'active')
-        .order('building_name');
-
-      if (fetchError) {
-        console.error('Error fetching buildings:', fetchError);
-        throw new Error(`Failed to fetch buildings: ${fetchError.message}`);
-      }
-
-      console.log('Buildings fetched:', buildingsData);
-
-      // For each building, count manuals (documents)
-      const buildingsWithCounts = await Promise.all(
-        (buildingsData || []).map(async (building) => {
-          const { count } = await supabase
-            .from('manuals')
-            .select('*', { count: 'exact', head: true })
-            .eq('building_id', building.building_id)
-            .eq('is_active', true);
-
-          return {
-            id: building.building_id,
-            name: building.building_name,
-            address: building.address || '',
-            region: building.region,
-            documentsCount: count || 0,
-            // Determine status based on manual count (simple heuristic)
-            status: (count || 0) > 15 ? 'online' : (count || 0) > 5 ? 'warning' : 'offline'
-          } as Building;
-        })
-      );
-
-      console.log('Buildings with counts:', buildingsWithCounts);
-      setBuildings(buildingsWithCounts);
-
-      // Set default building if none selected
-      if (buildingsWithCounts.length > 0 && !selectedBuilding) {
-        setSelectedBuilding(buildingsWithCounts[0]);
-        console.log('Default building selected:', buildingsWithCounts[0]);
-      }
+      console.log('Buildings loaded (placeholder):', PLACEHOLDER_BUILDINGS);
     } catch (err) {
       console.error('Exception fetching buildings:', err);
       setError(err instanceof Error ? err : new Error('Unknown error fetching buildings'));
-      // Keep any existing buildings in case of error
     } finally {
       setLoading(false);
     }
@@ -124,8 +103,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return buildings.filter((b) => profile.buildings.includes(b.id));
     }
 
-    // Default: no buildings accessible
-    return [];
+    // Default: show all buildings for now (until proper assignment)
+    return buildings;
   }, [buildings, role, profile]);
 
   // Update selected building when accessible buildings change

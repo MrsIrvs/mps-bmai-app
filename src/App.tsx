@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppProvider } from "@/contexts/AppContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ChatPage from "./pages/ChatPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import ServiceRequestsPage from "./pages/ServiceRequestsPage";
@@ -27,6 +28,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/chat" replace /> : <LoginPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/" element={<Navigate to={user ? "/chat" : "/login"} replace />} />
       <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />

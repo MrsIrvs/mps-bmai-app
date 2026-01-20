@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -27,7 +29,24 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      if (isSignUp) {
+      if (isForgotPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) {
+          toast({
+            title: 'Failed to send reset email',
+            description: error.message,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Reset email sent!',
+            description: 'Check your inbox for the password reset link.',
+          });
+          setIsForgotPassword(false);
+        }
+      } else if (isSignUp) {
         if (!fullName.trim()) {
           toast({
             title: 'Error',
@@ -101,12 +120,14 @@ export default function LoginPage() {
             </Badge>
             
             <h1 className="text-2xl font-heading font-semibold tracking-tight text-foreground">
-              {isSignUp ? 'Create your account' : 'Welcome back'}
+              {isForgotPassword ? 'Reset your password' : isSignUp ? 'Create your account' : 'Welcome back'}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {isSignUp 
-                ? 'Sign up to access the BMAI system' 
-                : 'Sign in to your account to continue'}
+              {isForgotPassword
+                ? 'Enter your email to receive a reset link'
+                : isSignUp 
+                  ? 'Sign up to access the BMAI system' 
+                  : 'Sign in to your account to continue'}
             </p>
           </div>
 
@@ -118,7 +139,7 @@ export default function LoginPage() {
             className="bg-card rounded-2xl border border-border p-8 shadow-lg"
           >
             <form onSubmit={handleSubmit} className="space-y-4">
-              {isSignUp && (
+              {isSignUp && !isForgotPassword && (
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
@@ -146,31 +167,44 @@ export default function LoginPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="h-11 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
+              {!isForgotPassword && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    {!isSignUp && (
+                      <button
+                        type="button"
+                        onClick={() => setIsForgotPassword(true)}
+                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        Forgot password?
+                      </button>
                     )}
-                  </button>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="h-11 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <Button
                 type="submit"
@@ -180,27 +214,37 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isSignUp ? 'Creating account...' : 'Signing in...'}
+                    {isForgotPassword ? 'Sending...' : isSignUp ? 'Creating account...' : 'Signing in...'}
                   </>
                 ) : (
-                  isSignUp ? 'Create account' : 'Sign in'
+                  isForgotPassword ? 'Send Reset Link' : isSignUp ? 'Create account' : 'Sign in'
                 )}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setPassword('');
-                }}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                {isSignUp 
-                  ? 'Already have an account? Sign in' 
-                  : "Don't have an account? Sign up"}
-              </button>
+            <div className="mt-6 text-center space-y-2">
+              {isForgotPassword ? (
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPassword(false)}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Back to login
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setPassword('');
+                  }}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {isSignUp 
+                    ? 'Already have an account? Sign in' 
+                    : "Don't have an account? Sign up"}
+                </button>
+              )}
             </div>
           </motion.div>
 

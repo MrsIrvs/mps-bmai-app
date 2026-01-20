@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Search, Filter, Grid3X3, List } from 'lucide-react';
 import { Document } from '@/types';
@@ -17,70 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-// Mock documents
-const mockDocuments: Document[] = [
-  {
-    id: '1',
-    name: 'HVAC System O&M Manual - Daikin VRV',
-    buildingId: '1',
-    type: 'om_manual',
-    uploadedAt: new Date('2024-01-10'),
-    uploadedBy: 'Sarah Mitchell',
-    size: 15_420_000,
-    status: 'indexed',
-  },
-  {
-    id: '2',
-    name: 'Fire Protection System Manual',
-    buildingId: '1',
-    type: 'compliance',
-    uploadedAt: new Date('2024-01-08'),
-    uploadedBy: 'Sarah Mitchell',
-    size: 8_340_000,
-    status: 'indexed',
-  },
-  {
-    id: '3',
-    name: 'Building Management System Guide',
-    buildingId: '1',
-    type: 'system_description',
-    uploadedAt: new Date('2024-01-05'),
-    uploadedBy: 'James Carter',
-    size: 12_100_000,
-    status: 'indexed',
-  },
-  {
-    id: '4',
-    name: 'Electrical Distribution O&M',
-    buildingId: '1',
-    type: 'om_manual',
-    uploadedAt: new Date('2024-01-14'),
-    uploadedBy: 'Sarah Mitchell',
-    size: 6_780_000,
-    status: 'processing',
-  },
-  {
-    id: '5',
-    name: 'Emergency Procedures Manual',
-    buildingId: '1',
-    type: 'compliance',
-    uploadedAt: new Date('2024-01-03'),
-    uploadedBy: 'Emily Chen',
-    size: 2_450_000,
-    status: 'indexed',
-  },
-  {
-    id: '6',
-    name: 'Lifts & Escalators Maintenance Guide',
-    buildingId: '1',
-    type: 'om_manual',
-    uploadedAt: new Date('2023-12-20'),
-    uploadedBy: 'James Carter',
-    size: 18_900_000,
-    status: 'indexed',
-  },
-];
+import { supabase } from '@/integrations/supabase/client';
 
 export default function DocumentsPage() {
   const { selectedBuilding } = useApp();
@@ -88,12 +25,60 @@ export default function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredDocs = mockDocuments.filter((doc) => {
+  // Fetch documents from Supabase
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      if (!selectedBuilding) {
+        setDocuments([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('manuals')
+          .select('*')
+          .eq('building_id', selectedBuilding.id)
+          .eq('is_active', true)
+          .order('upload_date', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching documents:', error);
+          setDocuments([]);
+        } else {
+          // Transform database records to Document type
+          const transformedDocs: Document[] = (data || []).map((manual) => ({
+            id: manual.manual_id,
+            name: manual.manual_name,
+            buildingId: manual.building_id,
+            type: manual.equipment_type || 'other',
+            uploadedAt: new Date(manual.upload_date),
+            uploadedBy: 'User', // TODO: Join with profiles table to get actual uploader name
+            size: manual.file_size_bytes || 0,
+            status: manual.processing_status === 'completed' ? 'indexed' :
+                   manual.processing_status === 'processing' ? 'processing' : 'pending',
+          }));
+          setDocuments(transformedDocs);
+        }
+      } catch (error) {
+        console.error('Exception fetching documents:', error);
+        setDocuments([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDocuments();
+  }, [selectedBuilding]);
+
+  const filteredDocs = documents.filter((doc) => {
     const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === 'all' || doc.type === filterType;
-    const matchesBuilding = doc.buildingId === selectedBuilding?.id;
-    return matchesSearch && matchesType && matchesBuilding;
+    return matchesSearch && matchesType;
   });
 
   return (
@@ -165,7 +150,12 @@ export default function DocumentsPage() {
         </div>
 
         {/* Documents Grid */}
-        {filteredDocs.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading documents...</p>
+          </div>
+        ) : filteredDocs.length === 0 ? (
           <div className="text-center py-16">
             <FileText className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-medium">No documents found</h3>

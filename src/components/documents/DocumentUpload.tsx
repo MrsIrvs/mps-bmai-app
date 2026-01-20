@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, X, FileText, CheckCircle } from 'lucide-react';
+import { Upload, X, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -20,11 +20,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { useApp } from '@/contexts/AppContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface FileUpload {
   file: File;
   progress: number;
   status: 'pending' | 'uploading' | 'complete' | 'error';
+  error?: string;
 }
 
 export function DocumentUpload() {
@@ -32,6 +37,9 @@ export function DocumentUpload() {
   const [files, setFiles] = useState<FileUpload[]>([]);
   const [docType, setDocType] = useState<string>('om_manual');
   const [isDragging, setIsDragging] = useState(false);
+  const { selectedBuilding, refreshBuildings } = useApp();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -61,24 +69,133 @@ export function DocumentUpload() {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const simulateUpload = () => {
-    files.forEach((_, index) => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 20;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          setFiles((prev) =>
-            prev.map((f, i) => (i === index ? { ...f, progress: 100, status: 'complete' } : f))
-          );
-        } else {
-          setFiles((prev) =>
-            prev.map((f, i) => (i === index ? { ...f, progress, status: 'uploading' } : f))
-          );
+  const uploadDocuments = async () => {
+    if (!selectedBuilding) {
+      toast({
+        title: 'No building selected',
+        description: 'Please select a building before uploading documents.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: 'Not authenticated',
+        description: 'You must be logged in to upload documents.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Upload each file
+    for (let index = 0; index < files.length; index++) {
+      const fileUpload = files[index];
+
+      // Skip already completed or currently uploading files
+      if (fileUpload.status === 'complete' || fileUpload.status === 'uploading') {
+        continue;
+      }
+
+      try {
+        // Update status to uploading
+        setFiles((prev) =>
+          prev.map((f, i) => (i === index ? { ...f, status: 'uploading', progress: 10 } : f))
+        );
+
+        const file = fileUpload.file;
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${selectedBuilding.id}/${Date.now()}_${file.name}`;
+
+        // Upload to Supabase Storage
+        const { data: storageData, error: storageError } = await supabase.storage
+          .from('manuals')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (storageError) {
+          throw new Error(`Storage upload failed: ${storageError.message}`);
         }
-      }, 200);
-    });
+
+        // Update progress
+        setFiles((prev) =>
+          prev.map((f, i) => (i === index ? { ...f, progress: 60 } : f))
+        );
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('manuals')
+          .getPublicUrl(fileName);
+
+        // Insert metadata into manuals table
+        const { error: dbError } = await supabase.from('manuals').insert({
+          building_id: selectedBuilding.id,
+          manual_name: file.name,
+          equipment_type: docType,
+          file_url: publicUrl,
+          file_size_bytes: file.size,
+          processing_status: 'pending',
+          is_active: true,
+        });
+
+        if (dbError) {
+          // Clean up uploaded file if database insert fails
+          await supabase.storage.from('manuals').remove([fileName]);
+          throw new Error(`Database insert failed: ${dbError.message}`);
+        }
+
+        // Success!
+        setFiles((prev) =>
+          prev.map((f, i) => (i === index ? { ...f, progress: 100, status: 'complete' } : f))
+        );
+        successCount++;
+      } catch (error) {
+        console.error('Upload error:', error);
+        setFiles((prev) =>
+          prev.map((f, i) =>
+            i === index
+              ? {
+                  ...f,
+                  status: 'error',
+                  error: error instanceof Error ? error.message : 'Upload failed',
+                }
+              : f
+          )
+        );
+        errorCount++;
+      }
+    }
+
+    // Show summary toast
+    if (successCount > 0) {
+      toast({
+        title: 'Upload complete',
+        description: `Successfully uploaded ${successCount} document${successCount > 1 ? 's' : ''}.`,
+      });
+
+      // Refresh buildings to update document counts
+      await refreshBuildings();
+
+      // Close dialog after a short delay
+      setTimeout(() => {
+        setIsOpen(false);
+        setFiles([]);
+        setDocType('om_manual');
+      }, 1500);
+    }
+
+    if (errorCount > 0) {
+      toast({
+        title: 'Upload errors',
+        description: `${errorCount} document${errorCount > 1 ? 's' : ''} failed to upload. Check the error messages.`,
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -171,15 +288,21 @@ export function DocumentUpload() {
                       {upload.status === 'uploading' && (
                         <Progress value={upload.progress} className="h-1.5 mt-2" />
                       )}
+                      {upload.status === 'error' && upload.error && (
+                        <p className="text-xs text-destructive mt-1">{upload.error}</p>
+                      )}
                     </div>
                     {upload.status === 'complete' ? (
                       <CheckCircle className="h-5 w-5 text-success shrink-0" />
+                    ) : upload.status === 'error' ? (
+                      <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
                     ) : (
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 shrink-0"
                         onClick={() => removeFile(index)}
+                        disabled={upload.status === 'uploading'}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -192,12 +315,12 @@ export function DocumentUpload() {
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+          <Button variant="outline" onClick={() => setIsOpen(false)} disabled={files.some((f) => f.status === 'uploading')}>
             Cancel
           </Button>
           <Button
-            onClick={simulateUpload}
-            disabled={files.length === 0 || files.every((f) => f.status === 'complete')}
+            onClick={uploadDocuments}
+            disabled={files.length === 0 || files.every((f) => f.status === 'complete' || f.status === 'uploading')}
             className="bg-accent hover:bg-accent/90"
           >
             Upload {files.length > 0 && `(${files.length})`}

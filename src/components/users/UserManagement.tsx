@@ -13,6 +13,9 @@ import {
   AlertCircle,
   Check,
   X,
+  UserPlus,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -92,6 +95,19 @@ export function UserManagement() {
     buildings: [] as string[],
   });
   const [saving, setSaving] = useState(false);
+
+  // Invite user dialog state
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    email: '',
+    fullName: '',
+    role: 'client' as AppRole,
+    region: '',
+    buildings: [] as string[],
+    tempPassword: '',
+  });
+  const [showTempPassword, setShowTempPassword] = useState(false);
+  const [inviting, setInviting] = useState(false);
 
   // Fetch users with their roles
   const fetchUsers = async () => {
@@ -222,7 +238,7 @@ export function UserManagement() {
     }
   };
 
-  // Toggle building in selection
+  // Toggle building in selection for edit form
   const toggleBuilding = (buildingId: string) => {
     setEditForm(prev => ({
       ...prev,
@@ -230,6 +246,89 @@ export function UserManagement() {
         ? prev.buildings.filter(id => id !== buildingId)
         : [...prev.buildings, buildingId],
     }));
+  };
+
+  // Toggle building in selection for invite form
+  const toggleInviteBuilding = (buildingId: string) => {
+    setInviteForm(prev => ({
+      ...prev,
+      buildings: prev.buildings.includes(buildingId)
+        ? prev.buildings.filter(id => id !== buildingId)
+        : [...prev.buildings, buildingId],
+    }));
+  };
+
+  // Generate a random temporary password
+  const generateTempPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setInviteForm(prev => ({ ...prev, tempPassword: password }));
+  };
+
+  // Handle invite user
+  const handleInviteUser = async () => {
+    if (!inviteForm.email || !inviteForm.fullName || !inviteForm.tempPassword) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setInviting(true);
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        toast.error('You must be logged in to invite users');
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            email: inviteForm.email,
+            fullName: inviteForm.fullName,
+            role: inviteForm.role,
+            region: inviteForm.role === 'technician' ? inviteForm.region : undefined,
+            buildings: inviteForm.role === 'client' ? inviteForm.buildings : undefined,
+            tempPassword: inviteForm.tempPassword,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.error || 'Failed to invite user');
+        return;
+      }
+
+      toast.success(`User ${inviteForm.email} invited successfully!`);
+      setInviteDialogOpen(false);
+      setInviteForm({
+        email: '',
+        fullName: '',
+        role: 'client',
+        region: '',
+        buildings: [],
+        tempPassword: '',
+      });
+      fetchUsers(); // Refresh the list
+    } catch (err) {
+      console.error('Error inviting user:', err);
+      toast.error('Failed to invite user');
+    } finally {
+      setInviting(false);
+    }
   };
 
   // Check if current user is admin
@@ -279,6 +378,10 @@ export function UserManagement() {
             </SelectContent>
           </Select>
         </div>
+        <Button onClick={() => setInviteDialogOpen(true)} className="gap-2">
+          <UserPlus className="h-4 w-4" />
+          Invite User
+        </Button>
       </div>
 
       {/* Stats */}
@@ -555,6 +658,177 @@ export function UserManagement() {
                 <Check className="mr-2 h-4 w-4" />
               )}
               Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite User Dialog */}
+      <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Invite New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account with the specified role and access permissions.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">Email *</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                placeholder="user@example.com"
+                value={inviteForm.email}
+                onChange={(e) => setInviteForm(prev => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+
+            {/* Full Name */}
+            <div className="space-y-2">
+              <Label htmlFor="invite-name">Full Name *</Label>
+              <Input
+                id="invite-name"
+                type="text"
+                placeholder="John Smith"
+                value={inviteForm.fullName}
+                onChange={(e) => setInviteForm(prev => ({ ...prev, fullName: e.target.value }))}
+              />
+            </div>
+
+            {/* Temporary Password */}
+            <div className="space-y-2">
+              <Label htmlFor="invite-password">Temporary Password *</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="invite-password"
+                    type={showTempPassword ? 'text' : 'password'}
+                    placeholder="Enter or generate password"
+                    value={inviteForm.tempPassword}
+                    onChange={(e) => setInviteForm(prev => ({ ...prev, tempPassword: e.target.value }))}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowTempPassword(!showTempPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showTempPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <Button type="button" variant="outline" onClick={generateTempPassword}>
+                  Generate
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Share this password with the user. They should change it after first login.
+              </p>
+            </div>
+
+            {/* Role Selection */}
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select 
+                value={inviteForm.role} 
+                onValueChange={(value: AppRole) => setInviteForm(prev => ({ ...prev, role: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">
+                    <span className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-blue-600" />
+                      Administrator
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="technician">
+                    <span className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-cyan-600" />
+                      Technician
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="client">
+                    <span className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-green-600" />
+                      Facilities Manager
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Region Selection for Technicians */}
+            {inviteForm.role === 'technician' && (
+              <div className="space-y-2">
+                <Label>Assigned Region</Label>
+                <Select 
+                  value={inviteForm.region} 
+                  onValueChange={(value) => setInviteForm(prev => ({ ...prev, region: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select region" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REGIONS.map(region => (
+                      <SelectItem key={region} value={region}>
+                        {region}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Building Selection for Clients */}
+            {inviteForm.role === 'client' && (
+              <div className="space-y-2">
+                <Label>Assigned Buildings</Label>
+                <div className="border rounded-lg divide-y max-h-32 overflow-y-auto">
+                  {AVAILABLE_BUILDINGS.map(building => (
+                    <div 
+                      key={building.id} 
+                      className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
+                      onClick={() => toggleInviteBuilding(building.id)}
+                    >
+                      <Checkbox 
+                        checked={inviteForm.buildings.includes(building.id)}
+                        onCheckedChange={() => toggleInviteBuilding(building.id)}
+                      />
+                      <span className="text-sm">{building.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => setInviteDialogOpen(false)}
+              disabled={inviting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleInviteUser}
+              disabled={inviting || !inviteForm.email || !inviteForm.fullName || !inviteForm.tempPassword}
+            >
+              {inviting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Inviting...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Invite User
+                </>
+              )}
             </Button>
           </div>
         </DialogContent>

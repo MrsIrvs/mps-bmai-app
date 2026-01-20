@@ -13,14 +13,12 @@ import mpsLogo from '@/assets/mps-logo.png';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { signIn, signUp, loading: authLoading } = useAuth();
+  const { signIn, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
-  const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -45,32 +43,6 @@ export default function LoginPage() {
             description: 'Check your inbox for the password reset link.',
           });
           setIsForgotPassword(false);
-        }
-      } else if (isSignUp) {
-        if (!fullName.trim()) {
-          toast({
-            title: 'Error',
-            description: 'Please enter your full name',
-            variant: 'destructive',
-          });
-          setLoading(false);
-          return;
-        }
-        
-        const { error } = await signUp(email, password, fullName);
-        if (error) {
-          toast({
-            title: 'Sign up failed',
-            description: error.message,
-            variant: 'destructive',
-          });
-        } else {
-          toast({
-            title: 'Account created!',
-            description: 'You can now sign in with your credentials.',
-          });
-          setIsSignUp(false);
-          setPassword('');
         }
       } else {
         const { error } = await signIn(email, password);
@@ -120,14 +92,12 @@ export default function LoginPage() {
             </Badge>
             
             <h1 className="text-2xl font-heading font-semibold tracking-tight text-foreground">
-              {isForgotPassword ? 'Reset your password' : isSignUp ? 'Create your account' : 'Welcome back'}
+              {isForgotPassword ? 'Reset your password' : 'Welcome back'}
             </h1>
             <p className="text-muted-foreground mt-1">
               {isForgotPassword
                 ? 'Enter your email to receive a reset link'
-                : isSignUp 
-                  ? 'Sign up to access the BMAI system' 
-                  : 'Sign in to your account to continue'}
+                : 'Sign in to your account to continue'}
             </p>
           </div>
 
@@ -139,21 +109,6 @@ export default function LoginPage() {
             className="bg-card rounded-2xl border border-border p-8 shadow-lg"
           >
             <form onSubmit={handleSubmit} className="space-y-4">
-              {isSignUp && !isForgotPassword && (
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required={isSignUp}
-                    className="h-11"
-                  />
-                </div>
-              )}
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -171,15 +126,13 @@ export default function LoginPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Password</Label>
-                    {!isSignUp && (
-                      <button
-                        type="button"
-                        onClick={() => setIsForgotPassword(true)}
-                        className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        Forgot password?
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsForgotPassword(true)}
+                      className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      Forgot password?
+                    </button>
                   </div>
                   <div className="relative">
                     <Input
@@ -214,16 +167,16 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isForgotPassword ? 'Sending...' : isSignUp ? 'Creating account...' : 'Signing in...'}
+                    {isForgotPassword ? 'Sending...' : 'Signing in...'}
                   </>
                 ) : (
-                  isForgotPassword ? 'Send Reset Link' : isSignUp ? 'Create account' : 'Sign in'
+                  isForgotPassword ? 'Send Reset Link' : 'Sign in'
                 )}
               </Button>
             </form>
 
-            <div className="mt-6 text-center space-y-2">
-              {isForgotPassword ? (
+            {isForgotPassword && (
+              <div className="mt-6 text-center">
                 <button
                   type="button"
                   onClick={() => setIsForgotPassword(false)}
@@ -231,21 +184,8 @@ export default function LoginPage() {
                 >
                   Back to login
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSignUp(!isSignUp);
-                    setPassword('');
-                  }}
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  {isSignUp 
-                    ? 'Already have an account? Sign in' 
-                    : "Don't have an account? Sign up"}
-                </button>
-              )}
-            </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Footer */}

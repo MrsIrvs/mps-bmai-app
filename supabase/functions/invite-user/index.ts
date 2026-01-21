@@ -140,6 +140,27 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Update buildings.client_user_ids for client users
+    if (role === 'client' && buildings && buildings.length > 0) {
+      for (const buildingId of buildings) {
+        const { data: building } = await adminClient
+          .from('buildings')
+          .select('client_user_ids')
+          .eq('id', buildingId)
+          .maybeSingle()
+
+        if (building) {
+          const currentIds = building.client_user_ids || []
+          if (!currentIds.includes(newUserId)) {
+            await adminClient
+              .from('buildings')
+              .update({ client_user_ids: [...currentIds, newUserId] })
+              .eq('id', buildingId)
+          }
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 

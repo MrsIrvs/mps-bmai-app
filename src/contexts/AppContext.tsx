@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Building {
   id: string;
@@ -25,34 +26,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Placeholder buildings until the buildings table is created
-const PLACEHOLDER_BUILDINGS: Building[] = [
-  {
-    id: 'building-1',
-    name: 'Perth CBD Tower',
-    address: '100 St Georges Terrace, Perth WA 6000',
-    region: 'WA',
-    documentsCount: 12,
-    status: 'online',
-  },
-  {
-    id: 'building-2',
-    name: 'Fremantle Maritime Centre',
-    address: '45 Mews Road, Fremantle WA 6160',
-    region: 'WA',
-    documentsCount: 8,
-    status: 'warning',
-  },
-  {
-    id: 'building-3',
-    name: 'Melbourne Central Plaza',
-    address: '211 La Trobe Street, Melbourne VIC 3000',
-    region: 'VIC',
-    documentsCount: 15,
-    status: 'online',
-  },
-];
-
 export function AppProvider({ children }: { children: ReactNode }) {
   const { profile, role } = useAuth();
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
@@ -61,18 +34,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Fetch buildings - uses placeholder data until buildings table exists
+  // Fetch buildings from database
   const fetchBuildings = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // TODO: Replace with actual Supabase query when buildings table is created
-      // For now, use placeholder data
-      await new Promise((resolve) => setTimeout(resolve, 300)); // Simulate network delay
-      setBuildings(PLACEHOLDER_BUILDINGS);
+      const { data, error: fetchError } = await supabase
+        .from('buildings')
+        .select('*')
+        .eq('is_archived', false)
+        .order('name', { ascending: true });
 
-      console.log('Buildings loaded (placeholder):', PLACEHOLDER_BUILDINGS);
+      if (fetchError) {
+        console.error('Error fetching buildings:', fetchError);
+        setError(new Error(fetchError.message));
+        return;
+      }
+
+      // Map database buildings to the Building interface
+      const mappedBuildings: Building[] = (data || []).map((b) => ({
+        id: b.id,
+        name: b.name,
+        address: b.address || '',
+        region: b.region,
+        documentsCount: 0, // TODO: Count documents when documents table exists
+        status: b.status === 'active' ? 'online' : 'warning',
+      }));
+
+      setBuildings(mappedBuildings);
+      console.log('Buildings loaded from database:', mappedBuildings.length);
     } catch (err) {
       console.error('Exception fetching buildings:', err);
       setError(err instanceof Error ? err : new Error('Unknown error fetching buildings'));
@@ -87,25 +78,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Filter buildings based on user's role and assigned buildings
+  // Note: RLS already handles most filtering, but we keep this for additional client-side filtering if needed
   const accessibleBuildings = React.useMemo(() => {
-    if (role === 'admin') {
-      // Admins see all buildings
-      return buildings;
-    }
-
-    if (role === 'technician' && profile?.region) {
-      // Technicians see buildings in their region
-      return buildings.filter((b) => b.region === profile.region);
-    }
-
-    if (role === 'client' && profile?.buildings?.length) {
-      // Clients see only their assigned buildings
-      return buildings.filter((b) => profile.buildings.includes(b.id));
-    }
-
-    // Default: show all buildings for now (until proper assignment)
+    // RLS handles the filtering server-side, so we just return all buildings from the query
     return buildings;
-  }, [buildings, role, profile]);
+  }, [buildings]);
 
   // Update selected building when accessible buildings change
   useEffect(() => {

@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      buildings: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          is_archived: boolean
+          name: string
+          notes: string | null
+          region: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          name: string
+          notes?: string | null
+          region: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          name?: string
+          notes?: string | null
+          region?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           buildings: string[] | null

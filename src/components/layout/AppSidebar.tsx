@@ -10,6 +10,7 @@ import {
   ChevronDown,
   LogOut,
   Menu,
+  Building2,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,6 +32,7 @@ const navigation = {
     { name: 'AI Assistant', href: '/chat', icon: MessageSquare },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Service Requests', href: '/service-requests', icon: Wrench },
+    { name: 'Buildings', href: '/buildings', icon: Building2 },
     { name: 'User Management', href: '/users', icon: Users },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
     { name: 'Settings', href: '/settings', icon: Settings },

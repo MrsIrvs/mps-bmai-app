@@ -70,18 +70,16 @@ const roleConfig: Record<AppRole, { label: string; className: string }> = {
 // Available regions for technicians
 const REGIONS = ['WA', 'VIC', 'NSW', 'QLD', 'SA', 'TAS', 'NT', 'ACT'];
 
-// Placeholder buildings until buildings table exists
-const AVAILABLE_BUILDINGS = [
-  { id: 'building-1', name: 'Perth CBD Tower' },
-  { id: 'building-2', name: 'Fremantle Maritime Centre' },
-  { id: 'building-3', name: 'Melbourne Central Plaza' },
-  { id: 'building-4', name: 'Sydney Opera Complex' },
-  { id: 'building-5', name: 'Brisbane Riverside Centre' },
-];
+interface BuildingOption {
+  id: string;
+  name: string;
+  region: string;
+}
 
 export function UserManagement() {
   const { role: currentUserRole } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
+  const [buildings, setBuildings] = useState<BuildingOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
@@ -94,6 +92,7 @@ export function UserManagement() {
     region: '',
     buildings: [] as string[],
   });
+  const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   // Invite user dialog state
@@ -106,8 +105,29 @@ export function UserManagement() {
     buildings: [] as string[],
     tempPassword: '',
   });
+  const [inviteFormErrors, setInviteFormErrors] = useState<Record<string, string>>({});
   const [showTempPassword, setShowTempPassword] = useState(false);
   const [inviting, setInviting] = useState(false);
+
+  // Fetch buildings from database
+  const fetchBuildings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('id, name, region')
+        .eq('is_archived', false)
+        .order('name', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching buildings:', error);
+        return;
+      }
+
+      setBuildings(data || []);
+    } catch (err) {
+      console.error('Error fetching buildings:', err);
+    }
+  };
 
   // Fetch users with their roles
   const fetchUsers = async () => {
@@ -163,6 +183,7 @@ export function UserManagement() {
 
   useEffect(() => {
     fetchUsers();
+    fetchBuildings();
   }, []);
 
   // Filter users based on search and role filter
@@ -189,6 +210,7 @@ export function UserManagement() {
       region: user.region || '',
       buildings: user.buildings || [],
     });
+    setEditFormErrors({});
     setEditDialogOpen(true);
   };
 
@@ -196,8 +218,21 @@ export function UserManagement() {
   const handleSaveUser = async () => {
     if (!editingUser) return;
 
+    // Validate for clients
+    if (editForm.role === 'client' && editForm.buildings.length === 0) {
+      setEditFormErrors({ buildings: 'Clients must have at least one building assigned' });
+      return;
+    }
+
+    // Validate for technicians
+    if (editForm.role === 'technician' && !editForm.region) {
+      setEditFormErrors({ region: 'Technicians must have a region assigned' });
+      return;
+    }
+
     try {
       setSaving(true);
+      setEditFormErrors({});
 
       // Update role in user_roles table
       const { error: roleError } = await supabase
@@ -211,12 +246,16 @@ export function UserManagement() {
         return;
       }
 
+      // Determine new buildings for this user
+      const newBuildings = editForm.role === 'client' ? editForm.buildings : [];
+      const oldBuildings = editingUser.buildings || [];
+
       // Update profile (region and buildings)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           region: editForm.role === 'technician' ? editForm.region : null,
-          buildings: editForm.role === 'client' ? editForm.buildings : [],
+          buildings: newBuildings,
         })
         .eq('user_id', editingUser.user_id);
 
@@ -226,10 +265,50 @@ export function UserManagement() {
         return;
       }
 
+      // Update buildings.client_user_ids for removed buildings
+      const removedBuildings = oldBuildings.filter(id => !newBuildings.includes(id));
+      for (const buildingId of removedBuildings) {
+        const { data: building } = await supabase
+          .from('buildings')
+          .select('client_user_ids')
+          .eq('id', buildingId)
+          .maybeSingle();
+
+        if (building) {
+          const updatedIds = (building.client_user_ids || []).filter(
+            (uid: string) => uid !== editingUser.user_id
+          );
+          await supabase
+            .from('buildings')
+            .update({ client_user_ids: updatedIds })
+            .eq('id', buildingId);
+        }
+      }
+
+      // Update buildings.client_user_ids for added buildings
+      const addedBuildings = newBuildings.filter(id => !oldBuildings.includes(id));
+      for (const buildingId of addedBuildings) {
+        const { data: building } = await supabase
+          .from('buildings')
+          .select('client_user_ids')
+          .eq('id', buildingId)
+          .maybeSingle();
+
+        if (building) {
+          const currentIds = building.client_user_ids || [];
+          if (!currentIds.includes(editingUser.user_id)) {
+            await supabase
+              .from('buildings')
+              .update({ client_user_ids: [...currentIds, editingUser.user_id] })
+              .eq('id', buildingId);
+          }
+        }
+      }
+
       toast.success('User updated successfully');
       setEditDialogOpen(false);
       setEditingUser(null);
-      fetchUsers(); // Refresh the list
+      fetchUsers();
     } catch (err) {
       console.error('Error saving user:', err);
       toast.error('Failed to save changes');
@@ -270,13 +349,26 @@ export function UserManagement() {
 
   // Handle invite user
   const handleInviteUser = async () => {
-    if (!inviteForm.email || !inviteForm.fullName || !inviteForm.tempPassword) {
-      toast.error('Please fill in all required fields');
+    // Validate required fields
+    const errors: Record<string, string> = {};
+    if (!inviteForm.email) errors.email = 'Email is required';
+    if (!inviteForm.fullName) errors.fullName = 'Full name is required';
+    if (!inviteForm.tempPassword) errors.tempPassword = 'Password is required';
+    if (inviteForm.role === 'client' && inviteForm.buildings.length === 0) {
+      errors.buildings = 'Clients must have at least one building assigned';
+    }
+    if (inviteForm.role === 'technician' && !inviteForm.region) {
+      errors.region = 'Technicians must have a region assigned';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setInviteFormErrors(errors);
       return;
     }
 
     try {
       setInviting(true);
+      setInviteFormErrors({});
 
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
@@ -295,8 +387,8 @@ export function UserManagement() {
             'Authorization': `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
-            email: inviteForm.email,
-            fullName: inviteForm.fullName,
+            email: inviteForm.email.trim().toLowerCase(),
+            fullName: inviteForm.fullName.trim(),
             role: inviteForm.role,
             region: inviteForm.role === 'technician' ? inviteForm.region : undefined,
             buildings: inviteForm.role === 'client' ? inviteForm.buildings : undefined,
@@ -312,6 +404,8 @@ export function UserManagement() {
         return;
       }
 
+      // Buildings are now updated by the edge function, no need to do it here
+
       toast.success(`User ${inviteForm.email} invited successfully!`);
       setInviteDialogOpen(false);
       setInviteForm({
@@ -322,7 +416,8 @@ export function UserManagement() {
         buildings: [],
         tempPassword: '',
       });
-      fetchUsers(); // Refresh the list
+      fetchUsers();
+      fetchBuildings(); // Refresh buildings to get updated client_user_ids
     } catch (err) {
       console.error('Error inviting user:', err);
       toast.error('Failed to invite user');
@@ -606,22 +701,37 @@ export function UserManagement() {
             {/* Building Selection for Clients */}
             {editForm.role === 'client' && (
               <div className="space-y-2">
-                <Label>Assigned Buildings</Label>
-                <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
-                  {AVAILABLE_BUILDINGS.map(building => (
-                    <div 
-                      key={building.id} 
-                      className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
-                      onClick={() => toggleBuilding(building.id)}
-                    >
-                      <Checkbox 
-                        checked={editForm.buildings.includes(building.id)}
-                        onCheckedChange={() => toggleBuilding(building.id)}
-                      />
-                      <span className="text-sm">{building.name}</span>
+                <Label>Assigned Buildings <span className="text-destructive">*</span></Label>
+                <div className={cn(
+                  "border rounded-lg divide-y max-h-48 overflow-y-auto",
+                  editFormErrors.buildings && "border-destructive"
+                )}>
+                  {buildings.length === 0 ? (
+                    <div className="p-3 text-sm text-muted-foreground text-center">
+                      No buildings available. Create buildings first.
                     </div>
-                  ))}
+                  ) : (
+                    buildings.map(building => (
+                      <div 
+                        key={building.id} 
+                        className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
+                        onClick={() => toggleBuilding(building.id)}
+                      >
+                        <Checkbox 
+                          checked={editForm.buildings.includes(building.id)}
+                          onCheckedChange={() => toggleBuilding(building.id)}
+                        />
+                        <div className="flex-1">
+                          <span className="text-sm">{building.name}</span>
+                          <span className="text-xs text-muted-foreground ml-2">({building.region})</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
+                {editFormErrors.buildings && (
+                  <p className="text-xs text-destructive">{editFormErrors.buildings}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Facilities Managers can only access their assigned buildings.
                 </p>
@@ -764,12 +874,12 @@ export function UserManagement() {
             {/* Region Selection for Technicians */}
             {inviteForm.role === 'technician' && (
               <div className="space-y-2">
-                <Label>Assigned Region</Label>
+                <Label>Assigned Region <span className="text-destructive">*</span></Label>
                 <Select 
                   value={inviteForm.region} 
                   onValueChange={(value) => setInviteForm(prev => ({ ...prev, region: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={inviteFormErrors.region ? 'border-destructive' : ''}>
                     <SelectValue placeholder="Select region" />
                   </SelectTrigger>
                   <SelectContent>
@@ -780,28 +890,46 @@ export function UserManagement() {
                     ))}
                   </SelectContent>
                 </Select>
+                {inviteFormErrors.region && (
+                  <p className="text-xs text-destructive">{inviteFormErrors.region}</p>
+                )}
               </div>
             )}
 
             {/* Building Selection for Clients */}
             {inviteForm.role === 'client' && (
               <div className="space-y-2">
-                <Label>Assigned Buildings</Label>
-                <div className="border rounded-lg divide-y max-h-32 overflow-y-auto">
-                  {AVAILABLE_BUILDINGS.map(building => (
-                    <div 
-                      key={building.id} 
-                      className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
-                      onClick={() => toggleInviteBuilding(building.id)}
-                    >
-                      <Checkbox 
-                        checked={inviteForm.buildings.includes(building.id)}
-                        onCheckedChange={() => toggleInviteBuilding(building.id)}
-                      />
-                      <span className="text-sm">{building.name}</span>
+                <Label>Assigned Buildings <span className="text-destructive">*</span></Label>
+                <div className={cn(
+                  "border rounded-lg divide-y max-h-32 overflow-y-auto",
+                  inviteFormErrors.buildings && "border-destructive"
+                )}>
+                  {buildings.length === 0 ? (
+                    <div className="p-3 text-sm text-muted-foreground text-center">
+                      No buildings available. Create buildings first.
                     </div>
-                  ))}
+                  ) : (
+                    buildings.map(building => (
+                      <div 
+                        key={building.id} 
+                        className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
+                        onClick={() => toggleInviteBuilding(building.id)}
+                      >
+                        <Checkbox 
+                          checked={inviteForm.buildings.includes(building.id)}
+                          onCheckedChange={() => toggleInviteBuilding(building.id)}
+                        />
+                        <div className="flex-1">
+                          <span className="text-sm">{building.name}</span>
+                          <span className="text-xs text-muted-foreground ml-2">({building.region})</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
+                {inviteFormErrors.buildings && (
+                  <p className="text-xs text-destructive">{inviteFormErrors.buildings}</p>
+                )}
               </div>
             )}
           </div>

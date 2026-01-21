@@ -17,6 +17,7 @@ export type Database = {
       buildings: {
         Row: {
           address: string | null
+          client_user_ids: string[]
           created_at: string
           id: string
           is_archived: boolean
@@ -28,6 +29,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          client_user_ids?: string[]
           created_at?: string
           id?: string
           is_archived?: boolean
@@ -39,6 +41,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          client_user_ids?: string[]
           created_at?: string
           id?: string
           is_archived?: boolean

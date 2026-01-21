@@ -22,13 +22,19 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const normalizeEmail = (value: string) => value.trim().toLowerCase();
+
+  const hasEdgeWhitespace = (value: string) => value.trim() !== value;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      const normalizedEmail = normalizeEmail(email);
+
       if (isForgotPassword) {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) {
@@ -45,7 +51,17 @@ export default function LoginPage() {
           setIsForgotPassword(false);
         }
       } else {
-        const { error } = await signIn(email, password);
+        if (hasEdgeWhitespace(password)) {
+          toast({
+            title: 'Check your password',
+            description:
+              'It looks like your password has hidden leading/trailing whitespace (often from copy/paste). Please re-type it (don\'t paste) and try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        const { error } = await signIn(normalizedEmail, password);
         if (error) {
           toast({
             title: 'Login failed',
@@ -117,6 +133,9 @@ export default function LoginPage() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   required
                   className="h-11"
                 />
@@ -141,6 +160,9 @@ export default function LoginPage() {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
                       required
                       className="h-11 pr-10"
                     />

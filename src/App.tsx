@@ -12,6 +12,7 @@ import ChatPage from "./pages/ChatPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import ServiceRequestsPage from "./pages/ServiceRequestsPage";
 import UsersPage from "./pages/UsersPage";
+import BuildingsPage from "./pages/BuildingsPage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ function AppRoutes() {
       <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
       <Route path="/service-requests" element={<ProtectedRoute><ServiceRequestsPage /></ProtectedRoute>} />
+      <Route path="/buildings" element={<ProtectedRoute><BuildingsPage /></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

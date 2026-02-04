@@ -58,6 +58,11 @@ Most features filter by `selectedBuilding` from AppContext. The sidebar includes
 - `user_roles`: Role assignments (user_id, role enum)
 - `buildings`: Building records with `client_user_ids[]` for client access
 
+**Service Requests Tables:**
+- `service_requests`: Maintenance requests (title, description, category, priority, status, location)
+- `service_providers`: External service provider contacts (name, email, phone)
+- `building_service_provider_assignments`: Links providers to buildings by category (one provider per category per building)
+
 **O&M Manual Tables:**
 - `manuals`: Manual metadata (name, equipment_type, processing_status)
 - `manual_sections`: Hierarchical TOC structure (parent_section_id for nesting)
@@ -131,6 +136,36 @@ Two search modes are available via PostgreSQL functions:
 - **Semantic Search**: Vector similarity using `search_manual_content()` (requires OpenAI embeddings)
 
 Equipment types: `HVAC`, `Electrical`, `Fire`, `Plumbing`, `Hydraulic`, `Security`, `Lift`, `Other`
+
+## Commit Conventions (ClickUp Integration)
+
+Commits sync with ClickUp when task IDs are included:
+
+```bash
+# Format: <type>: <description> #<task-id>
+git commit -m "feat: Create service_requests database table #869c0cja8"
+git commit -m "fix: Resolve RLS policy for client role #869c0cja9"
+```
+
+Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `style`, `perf`
+
+Branch naming: `<type>/<task-id>-<short-description>` (e.g., `feat/869c0cja8-service-requests`)
+
+See `references/commit-conventions.md` for full guide.
+
+## Supabase MCP Integration
+
+Database changes can be applied via Supabase MCP when configured:
+- MCP config in Claude Code settings with project ref
+- Migrations stored in `supabase/migrations/`
+- Alternatively, paste SQL directly in Supabase Dashboard SQL Editor
+
+## Project Management
+
+- `TASKS.md`: Task list with Feature column, organized by phase
+- `PROJECT_PLAN.md`: Full project governance (WBS, timeline, RACI, risks)
+- `docs/UAT_TEST_PLAN.md`: Test cases by user role
+- `docs/ROLLOUT_PLAN.md`: Deployment checklists
 
 ## Environment Variables
 

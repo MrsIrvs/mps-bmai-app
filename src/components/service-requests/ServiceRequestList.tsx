@@ -4,19 +4,25 @@ import {
   Wrench,
   Clock,
   CheckCircle2,
-  AlertCircle,
   Building2,
-  User,
   Camera,
   Send,
   ArrowUpRight,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
-import { ServiceRequest } from '@/types';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  useServiceRequests,
+  useCreateServiceRequest,
+  ServiceRequestStatus,
+} from '@/hooks/useServiceRequests';
+import { ServiceRequestPriority, ServiceRequestCategory } from '@/lib/service-request-queries';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
@@ -33,91 +39,80 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
-const statusConfig = {
+const statusConfig: Record<ServiceRequestStatus, { icon: typeof Clock; label: string; className: string }> = {
   pending: { icon: Clock, label: 'Pending', className: 'bg-warning/10 text-warning' },
   dispatched: { icon: ArrowUpRight, label: 'Dispatched', className: 'bg-info/10 text-info' },
   in_progress: { icon: Wrench, label: 'In Progress', className: 'bg-accent/10 text-accent' },
   resolved: { icon: CheckCircle2, label: 'Resolved', className: 'bg-success/10 text-success' },
 };
 
-const priorityConfig = {
+const priorityConfig: Record<ServiceRequestPriority, { label: string; className: string }> = {
   low: { label: 'Low', className: 'bg-muted text-muted-foreground' },
   medium: { label: 'Medium', className: 'bg-warning/10 text-warning' },
   high: { label: 'High', className: 'bg-destructive/10 text-destructive' },
 };
 
-// Mock service requests (will be replaced with real data in Phase 1 Task 5)
-const mockRequests: ServiceRequest[] = [
-  {
-    id: '1',
-    buildingId: '1',
-    title: 'HVAC Issue on Level 3',
-    description: 'Air conditioning not working properly on Level 3. Temperature reading 28°C when set to 22°C.',
-    category: 'HVAC',
-    priority: 'high',
-    status: 'in_progress',
-    location: 'Level 3',
-    photoUrls: [],
-    createdBy: 'client-1',
-    createdAt: new Date('2024-01-14T09:30:00'),
-    updatedAt: new Date('2024-01-14T09:30:00'),
-    // Joined data for display
-    buildingName: 'Westfield Sydney CBD',
-    createdByName: 'Emily Chen',
-  },
-  {
-    id: '2',
-    buildingId: '1',
-    title: 'Flickering Lights in Lobby',
-    description: 'Flickering lights in the main lobby area near the east entrance.',
-    category: 'Electrical',
-    priority: 'medium',
-    status: 'dispatched',
-    location: 'Main Lobby, East Entrance',
-    photoUrls: [],
-    createdBy: 'client-1',
-    createdAt: new Date('2024-01-13T14:15:00'),
-    updatedAt: new Date('2024-01-13T14:15:00'),
-    // Joined data for display
-    buildingName: 'Westfield Sydney CBD',
-    createdByName: 'Emily Chen',
-  },
-  {
-    id: '3',
-    buildingId: '2',
-    title: 'Fire Suppression Quarterly Inspection',
-    description: 'Scheduled maintenance for fire suppression system - quarterly inspection.',
-    category: 'Fire',
-    priority: 'low',
-    status: 'pending',
-    photoUrls: [],
-    createdBy: 'tech-2',
-    createdAt: new Date('2024-01-12T11:00:00'),
-    updatedAt: new Date('2024-01-12T11:00:00'),
-    // Joined data for display
-    buildingName: 'Perth Convention Centre',
-    createdByName: 'Mike Thompson',
-  },
+const categoryOptions: { value: ServiceRequestCategory; label: string }[] = [
+  { value: 'HVAC', label: 'HVAC' },
+  { value: 'Electrical', label: 'Electrical' },
+  { value: 'Fire', label: 'Fire' },
+  { value: 'Plumbing', label: 'Plumbing' },
+  { value: 'Hydraulic', label: 'Hydraulic' },
+  { value: 'Security', label: 'Security' },
+  { value: 'Lift', label: 'Lift' },
+  { value: 'Other', label: 'Other' },
 ];
 
 export function ServiceRequestList() {
   const { selectedBuilding } = useApp();
   const { role } = useAuth();
+  const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<string>('medium');
+  const [category, setCategory] = useState<ServiceRequestCategory>('Other');
+  const [priority, setPriority] = useState<ServiceRequestPriority>('medium');
 
-  // Filter requests based on building for clients
-  const filteredRequests = role === 'client'
-    ? mockRequests.filter((r) => r.buildingId === selectedBuilding?.id)
-    : mockRequests;
+  // Fetch service requests using the hook
+  const { data: requests = [], isLoading, error } = useServiceRequests({ includeResolved: true });
+  const createMutation = useCreateServiceRequest();
 
-  const handleSubmit = () => {
-    // Simulate submission
-    setShowForm(false);
-    setDescription('');
-    setPriority('medium');
+  const handleSubmit = async () => {
+    if (!selectedBuilding?.id || !title.trim() || !description.trim()) return;
+
+    try {
+      await createMutation.mutateAsync({
+        building_id: selectedBuilding.id,
+        title: title.trim(),
+        description: description.trim(),
+        category,
+        priority,
+      });
+
+      toast({
+        title: 'Request submitted',
+        description: 'Your service request has been created successfully.',
+      });
+
+      // Reset form
+      setShowForm(false);
+      setTitle('');
+      setDescription('');
+      setCategory('Other');
+      setPriority('medium');
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to create service request',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
@@ -144,7 +139,15 @@ export function ServiceRequestList() {
           {showForm && (
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Describe the issue</Label>
+                <Label>Title</Label>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Brief summary of the issue..."
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -155,8 +158,23 @@ export function ServiceRequestList() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label>Category</Label>
+                  <Select value={category} onValueChange={(v) => setCategory(v as ServiceRequestCategory)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label>Priority</Label>
-                  <Select value={priority} onValueChange={setPriority}>
+                  <Select value={priority} onValueChange={(v) => setPriority(v as ServiceRequestPriority)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -167,25 +185,29 @@ export function ServiceRequestList() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Attach Photo (optional)</Label>
-                  <Button variant="outline" className="w-full gap-2">
-                    <Camera className="h-4 w-4" />
-                    Upload Photo
-                  </Button>
-                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Attach Photo (optional)</Label>
+                <Button variant="outline" className="w-full gap-2" type="button">
+                  <Camera className="h-4 w-4" />
+                  Upload Photo
+                </Button>
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={() => setShowForm(false)}>
+                <Button variant="outline" onClick={() => setShowForm(false)} type="button">
                   Cancel
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  disabled={!description.trim()}
+                  disabled={!title.trim() || !description.trim() || createMutation.isPending}
                   className="gap-2 bg-accent hover:bg-accent/90"
                 >
-                  <Send className="h-4 w-4" />
-                  Submit Request
+                  {createMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  {createMutation.isPending ? 'Submitting...' : 'Submit Request'}
                 </Button>
               </div>
             </CardContent>
@@ -197,62 +219,95 @@ export function ServiceRequestList() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Recent Requests</h3>
-          <Badge variant="secondary">{filteredRequests.length} total</Badge>
+          <Badge variant="secondary">{requests.length} total</Badge>
         </div>
 
-        <div className="space-y-3">
-          {filteredRequests.map((request, index) => {
-            const status = statusConfig[request.status];
-            const StatusIcon = status.icon;
-            const priorityCfg = priorityConfig[request.priority];
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
 
-            return (
-              <motion.div
-                key={request.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className={cn(
-                  'bg-card rounded-xl border border-border p-5',
-                  'hover:shadow-md hover:border-accent/30 transition-all cursor-pointer'
-                )}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge className={cn('text-xs', priorityCfg.className)}>
-                        {priorityCfg.label}
-                      </Badge>
-                      <Badge className={cn('text-xs gap-1.5', status.className)}>
-                        <StatusIcon className="h-3 w-3" />
-                        {status.label}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {request.category}
-                      </Badge>
-                    </div>
-                    <h4 className="font-medium mb-1">{request.title}</h4>
-                    <p className="text-sm text-muted-foreground mb-3">{request.description}</p>
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1.5">
-                        <Building2 className="h-3.5 w-3.5" />
-                        {request.buildingName}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <User className="h-3.5 w-3.5" />
-                        {request.createdByName}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5" />
-                        {request.createdAt.toLocaleDateString()}
-                      </span>
+        {/* Error State */}
+        {error && (
+          <Card className="border-destructive/50">
+            <CardContent className="flex items-center gap-3 py-6">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <p className="text-sm text-destructive">
+                Failed to load service requests. Please try again.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && requests.length === 0 && (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <Wrench className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <h4 className="font-medium mb-1">No service requests</h4>
+              <p className="text-sm text-muted-foreground">
+                {selectedBuilding
+                  ? `No service requests found for ${selectedBuilding.name}.`
+                  : 'Select a building to view service requests.'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Request List */}
+        {!isLoading && !error && requests.length > 0 && (
+          <div className="space-y-3">
+            {requests.map((request, index) => {
+              const status = statusConfig[request.status];
+              const StatusIcon = status.icon;
+              const priorityCfg = priorityConfig[request.priority];
+
+              return (
+                <motion.div
+                  key={request.request_id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className={cn(
+                    'bg-card rounded-xl border border-border p-5',
+                    'hover:shadow-md hover:border-accent/30 transition-all cursor-pointer'
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Badge className={cn('text-xs', priorityCfg.className)}>
+                          {priorityCfg.label}
+                        </Badge>
+                        <Badge className={cn('text-xs gap-1.5', status.className)}>
+                          <StatusIcon className="h-3 w-3" />
+                          {status.label}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {request.category}
+                        </Badge>
+                      </div>
+                      <h4 className="font-medium mb-1">{request.title}</h4>
+                      <p className="text-sm text-muted-foreground mb-3">{request.description}</p>
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <Building2 className="h-3.5 w-3.5" />
+                          {selectedBuilding?.name || 'Unknown Building'}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5" />
+                          {formatDate(request.created_at)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   Building2,
+  HardHat,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +33,7 @@ const navigation = {
     { name: 'AI Assistant', href: '/chat', icon: MessageSquare },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Service Requests', href: '/service-requests', icon: Wrench },
+    { name: 'Contractors', href: '/contractors', icon: HardHat },
     { name: 'Buildings', href: '/buildings', icon: Building2 },
     { name: 'User Management', href: '/users', icon: Users },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
@@ -46,6 +48,7 @@ const navigation = {
     { name: 'AI Assistant', href: '/chat', icon: MessageSquare },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Service Requests', href: '/service-requests', icon: Wrench },
+    { name: 'Contractors', href: '/contractors', icon: HardHat },
   ],
 };
 

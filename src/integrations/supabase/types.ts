@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      building_service_provider_assignments: {
+        Row: {
+          id: string
+          building_id: string
+          service_provider_id: string
+          category: Database["public"]["Enums"]["equipment_category"]
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          building_id: string
+          service_provider_id: string
+          category: Database["public"]["Enums"]["equipment_category"]
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          building_id?: string
+          service_provider_id?: string
+          category?: Database["public"]["Enums"]["equipment_category"]
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_service_provider_assignments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_service_provider_assignments_service_provider_id_fkey"
+            columns: ["service_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       buildings: {
         Row: {
           address: string | null
@@ -86,6 +128,95 @@ export type Database = {
         }
         Relationships: []
       }
+      service_providers: {
+        Row: {
+          id: string
+          name: string
+          email: string
+          phone: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          email: string
+          phone?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          email?: string
+          phone?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_requests: {
+        Row: {
+          id: string
+          building_id: string
+          title: string
+          description: string
+          category: Database["public"]["Enums"]["equipment_category"]
+          priority: Database["public"]["Enums"]["request_priority"]
+          status: Database["public"]["Enums"]["request_status"]
+          location: string | null
+          due_date: string | null
+          photo_urls: string[]
+          notes: string | null
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          building_id: string
+          title: string
+          description: string
+          category: Database["public"]["Enums"]["equipment_category"]
+          priority?: Database["public"]["Enums"]["request_priority"]
+          status?: Database["public"]["Enums"]["request_status"]
+          location?: string | null
+          due_date?: string | null
+          photo_urls?: string[]
+          notes?: string | null
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          building_id?: string
+          title?: string
+          description?: string
+          category?: Database["public"]["Enums"]["equipment_category"]
+          priority?: Database["public"]["Enums"]["request_priority"]
+          status?: Database["public"]["Enums"]["request_status"]
+          location?: string | null
+          due_date?: string | null
+          photo_urls?: string[]
+          notes?: string | null
+          created_by?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -109,6 +240,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_service_provider_for_request: {
+        Args: {
+          _building_id: string
+          _category: Database["public"]["Enums"]["equipment_category"]
+        }
+        Returns: {
+          provider_id: string
+          provider_name: string
+          provider_email: string
+          provider_phone: string | null
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -123,6 +266,9 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "technician" | "client"
+      equipment_category: "HVAC" | "Electrical" | "Fire" | "Plumbing" | "Hydraulic" | "Security" | "Lift" | "Other"
+      request_priority: "low" | "medium" | "high"
+      request_status: "pending" | "dispatched" | "in_progress" | "resolved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -251,6 +397,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "technician", "client"],
+      equipment_category: ["HVAC", "Electrical", "Fire", "Plumbing", "Hydraulic", "Security", "Lift", "Other"],
+      request_priority: ["low", "medium", "high"],
+      request_status: ["pending", "dispatched", "in_progress", "resolved"],
     },
   },
 } as const

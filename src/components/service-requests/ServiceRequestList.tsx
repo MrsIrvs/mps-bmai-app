@@ -47,40 +47,57 @@ const priorityConfig = {
   high: { label: 'High', className: 'bg-destructive/10 text-destructive' },
 };
 
-// Mock service requests
+// Mock service requests (will be replaced with real data in Phase 1 Task 5)
 const mockRequests: ServiceRequest[] = [
   {
     id: '1',
     buildingId: '1',
-    buildingName: 'Westfield Sydney CBD',
-    userId: 'client-1',
-    userName: 'Emily Chen',
+    title: 'HVAC Issue on Level 3',
     description: 'Air conditioning not working properly on Level 3. Temperature reading 28°C when set to 22°C.',
-    status: 'in_progress',
+    category: 'HVAC',
     priority: 'high',
+    status: 'in_progress',
+    location: 'Level 3',
+    photoUrls: [],
+    createdBy: 'client-1',
     createdAt: new Date('2024-01-14T09:30:00'),
+    updatedAt: new Date('2024-01-14T09:30:00'),
+    // Joined data for display
+    buildingName: 'Westfield Sydney CBD',
+    createdByName: 'Emily Chen',
   },
   {
     id: '2',
     buildingId: '1',
-    buildingName: 'Westfield Sydney CBD',
-    userId: 'client-1',
-    userName: 'Emily Chen',
+    title: 'Flickering Lights in Lobby',
     description: 'Flickering lights in the main lobby area near the east entrance.',
-    status: 'dispatched',
+    category: 'Electrical',
     priority: 'medium',
+    status: 'dispatched',
+    location: 'Main Lobby, East Entrance',
+    photoUrls: [],
+    createdBy: 'client-1',
     createdAt: new Date('2024-01-13T14:15:00'),
+    updatedAt: new Date('2024-01-13T14:15:00'),
+    // Joined data for display
+    buildingName: 'Westfield Sydney CBD',
+    createdByName: 'Emily Chen',
   },
   {
     id: '3',
     buildingId: '2',
-    buildingName: 'Perth Convention Centre',
-    userId: 'tech-2',
-    userName: 'Mike Thompson',
+    title: 'Fire Suppression Quarterly Inspection',
     description: 'Scheduled maintenance for fire suppression system - quarterly inspection.',
-    status: 'pending',
+    category: 'Fire',
     priority: 'low',
+    status: 'pending',
+    photoUrls: [],
+    createdBy: 'tech-2',
     createdAt: new Date('2024-01-12T11:00:00'),
+    updatedAt: new Date('2024-01-12T11:00:00'),
+    // Joined data for display
+    buildingName: 'Perth Convention Centre',
+    createdByName: 'Mike Thompson',
   },
 ];
 
@@ -210,8 +227,12 @@ export function ServiceRequestList() {
                         <StatusIcon className="h-3 w-3" />
                         {status.label}
                       </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {request.category}
+                      </Badge>
                     </div>
-                    <p className="text-sm mb-3">{request.description}</p>
+                    <h4 className="font-medium mb-1">{request.title}</h4>
+                    <p className="text-sm text-muted-foreground mb-3">{request.description}</p>
                     <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1.5">
                         <Building2 className="h-3.5 w-3.5" />
@@ -219,7 +240,7 @@ export function ServiceRequestList() {
                       </span>
                       <span className="flex items-center gap-1.5">
                         <User className="h-3.5 w-3.5" />
-                        {request.userName}
+                        {request.createdByName}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" />

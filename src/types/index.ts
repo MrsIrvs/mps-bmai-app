@@ -47,17 +47,53 @@ export interface DocumentSource {
   page?: number;
 }
 
+// Equipment/service categories (matches manual equipment types)
+export type EquipmentCategory = 'HVAC' | 'Electrical' | 'Fire' | 'Plumbing' | 'Hydraulic' | 'Security' | 'Lift' | 'Other';
+
+// Request priority and status
+export type RequestPriority = 'low' | 'medium' | 'high';
+export type RequestStatus = 'pending' | 'dispatched' | 'in_progress' | 'resolved';
+
+export interface ServiceProvider {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  createdBy?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BuildingServiceProviderAssignment {
+  id: string;
+  buildingId: string;
+  serviceProviderId: string;
+  category: EquipmentCategory;
+  createdBy?: string;
+  createdAt: Date;
+  // Joined data (optional)
+  serviceProvider?: ServiceProvider;
+  building?: Building;
+}
+
 export interface ServiceRequest {
   id: string;
   buildingId: string;
-  buildingName: string;
-  userId: string;
-  userName: string;
+  title: string;
   description: string;
-  photoUrl?: string;
-  status: 'pending' | 'dispatched' | 'in_progress' | 'resolved';
+  category: EquipmentCategory;
+  priority: RequestPriority;
+  status: RequestStatus;
+  location?: string;
+  dueDate?: Date;
+  photoUrls: string[];
+  notes?: string;
+  createdBy: string;
   createdAt: Date;
-  priority: 'low' | 'medium' | 'high';
+  updatedAt: Date;
+  // Joined data (optional, for display purposes)
+  buildingName?: string;
+  createdByName?: string;
 }
 
 export interface ChatSession {

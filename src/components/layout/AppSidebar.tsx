@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
+  LayoutDashboard,
   MessageSquare,
   FileText,
   Users,
@@ -30,6 +31,7 @@ import mpsLogo from '@/assets/mps-logo.png';
 
 const navigation = {
   admin: [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'AI Assistant', href: '/chat', icon: MessageSquare },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Service Requests', href: '/service-requests', icon: Wrench },
@@ -40,11 +42,13 @@ const navigation = {
     { name: 'Settings', href: '/settings', icon: Settings },
   ],
   technician: [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'AI Assistant', href: '/chat', icon: MessageSquare },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Service Requests', href: '/service-requests', icon: Wrench },
   ],
   client: [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'AI Assistant', href: '/chat', icon: MessageSquare },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Service Requests', href: '/service-requests', icon: Wrench },

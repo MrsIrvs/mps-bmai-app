@@ -128,12 +128,66 @@ export type Database = {
         }
         Relationships: []
       }
+      contractor_building_assignments: {
+        Row: {
+          id: string
+          contractor_id: string
+          building_id: string
+          is_preferred: boolean
+          assigned_at: string
+          assigned_by: string | null
+          notes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          contractor_id: string
+          building_id: string
+          is_preferred?: boolean
+          assigned_at?: string
+          assigned_by?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          contractor_id?: string
+          building_id?: string
+          is_preferred?: boolean
+          assigned_at?: string
+          assigned_by?: string | null
+          notes?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractor_building_assignments_contractor_id_fkey"
+            columns: ["contractor_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractor_building_assignments_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "buildings"
+            referencedColumns: ["building_id"]
+          }
+        ]
+      }
       service_providers: {
         Row: {
           id: string
           name: string
           email: string
           phone: string | null
+          contact_name: string | null
+          specialties: string[] | null
+          emergency_available: boolean
+          rating: number | null
+          notes: string | null
+          is_archived: boolean
           created_by: string | null
           created_at: string
           updated_at: string
@@ -143,6 +197,12 @@ export type Database = {
           name: string
           email: string
           phone?: string | null
+          contact_name?: string | null
+          specialties?: string[] | null
+          emergency_available?: boolean
+          rating?: number | null
+          notes?: string | null
+          is_archived?: boolean
           created_by?: string | null
           created_at?: string
           updated_at?: string
@@ -152,6 +212,12 @@ export type Database = {
           name?: string
           email?: string
           phone?: string | null
+          contact_name?: string | null
+          specialties?: string[] | null
+          emergency_available?: boolean
+          rating?: number | null
+          notes?: string | null
+          is_archived?: boolean
           created_by?: string | null
           created_at?: string
           updated_at?: string
@@ -240,6 +306,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_contractors_for_building: {
+        Args: {
+          _building_id: string
+        }
+        Returns: {
+          contractor_id: string
+          contractor_name: string
+          contractor_email: string
+          contractor_phone: string | null
+          contact_name: string | null
+          specialties: string[] | null
+          emergency_available: boolean
+          rating: number | null
+          is_preferred: boolean
+        }[]
+      }
       get_service_provider_for_request: {
         Args: {
           _building_id: string

@@ -54,8 +54,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       // Map database buildings to the Building interface
       const mappedBuildings: Building[] = (data || []).map((b) => ({
-        id: b.id,
-        name: b.name,
+        id: b.building_id,
+        name: b.building_name,
         address: b.address || '',
         region: b.region,
         documentsCount: 0, // TODO: Count documents when documents table exists

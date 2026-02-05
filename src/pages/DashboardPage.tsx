@@ -87,7 +87,7 @@ export default function DashboardPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">Welcome Back</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">Welcome Back</h1>
             <p className="text-muted-foreground">
               Here's what's happening with {selectedBuilding.name}
             </p>
@@ -100,19 +100,21 @@ export default function DashboardPage() {
               animate={{ opacity: 1, scale: 1 }}
             >
               <Card className="mb-6 border-red-200 bg-red-50 dark:bg-red-950/20 shadow-md">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <AlertCircle className="w-10 h-10 text-red-600 shrink-0" />
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-red-900 dark:text-red-100">
-                        High Priority Requests Pending
-                      </h3>
-                      <p className="text-red-700 dark:text-red-300">
-                        You have {emergencyRequests} high priority service request{emergencyRequests !== 1 ? 's' : ''} requiring attention
-                      </p>
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-red-600 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg font-bold text-red-900 dark:text-red-100">
+                          High Priority Requests Pending
+                        </h3>
+                        <p className="text-sm sm:text-base text-red-700 dark:text-red-300">
+                          You have {emergencyRequests} high priority service request{emergencyRequests !== 1 ? 's' : ''} requiring attention
+                        </p>
+                      </div>
                     </div>
                     <Link to="/service-requests" className="shrink-0">
-                      <Button className="bg-red-600 hover:bg-red-700 text-white">
+                      <Button className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white">
                         View Now
                       </Button>
                     </Link>

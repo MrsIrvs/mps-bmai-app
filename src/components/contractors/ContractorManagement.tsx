@@ -224,14 +224,14 @@ export function ContractorManagement() {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="emergencyFilter"
                   checked={showEmergencyOnly}
                   onCheckedChange={(checked) => setShowEmergencyOnly(checked as boolean)}
                 />
-                <label htmlFor="emergencyFilter" className="text-sm cursor-pointer whitespace-nowrap">
+                <label htmlFor="emergencyFilter" className="text-sm cursor-pointer">
                   Emergency Only
                 </label>
               </div>
@@ -241,7 +241,7 @@ export function ContractorManagement() {
                   checked={showArchived}
                   onCheckedChange={(checked) => setShowArchived(checked as boolean)}
                 />
-                <label htmlFor="archivedFilter" className="text-sm cursor-pointer whitespace-nowrap">
+                <label htmlFor="archivedFilter" className="text-sm cursor-pointer">
                   Show Archived
                 </label>
               </div>
@@ -279,27 +279,27 @@ export function ContractorManagement() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEdit(contractor)}
-                      className="h-8 w-8"
+                      className="h-10 w-10"
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit className="w-5 h-5" />
                     </Button>
                     {contractor.is_archived ? (
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleRestore(contractor)}
-                        className="h-8 w-8 text-green-600 hover:text-green-700"
+                        className="h-10 w-10 text-green-600 hover:text-green-700"
                       >
-                        <RotateCcw className="w-4 h-4" />
+                        <RotateCcw className="w-5 h-5" />
                       </Button>
                     ) : (
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(contractor)}
-                        className="h-8 w-8 text-red-500 hover:text-red-700"
+                        className="h-10 w-10 text-red-500 hover:text-red-700"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-5 h-5" />
                       </Button>
                     )}
                   </div>

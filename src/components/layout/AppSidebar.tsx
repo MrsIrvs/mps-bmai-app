@@ -106,10 +106,10 @@ export function AppSidebar() {
         initial={false}
         animate={{ x: sidebarOpen ? 0 : -280 }}
         className={cn(
-          'fixed left-0 top-0 z-50 h-screen w-[280px] flex flex-col',
+          'fixed left-0 top-0 z-50 h-screen w-[min(280px,85vw)] flex flex-col',
           'bg-sidebar text-sidebar-foreground',
           'border-r border-sidebar-border',
-          'lg:translate-x-0 lg:static'
+          'lg:w-[280px] lg:translate-x-0 lg:static'
         )}
         style={{ background: 'var(--gradient-sidebar)' }}
       >
@@ -143,7 +143,7 @@ export function AppSidebar() {
                 <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[248px]">
+            <DropdownMenuContent align="start" className="w-[min(248px,calc(85vw-2rem))]">
               {buildings.map((building) => (
                 <DropdownMenuItem
                   key={building.id}
@@ -207,7 +207,7 @@ export function AppSidebar() {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[248px]">
+            <DropdownMenuContent align="start" className="w-[min(248px,calc(85vw-2rem))]">
               <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />
                 Account Settings

@@ -14,7 +14,6 @@ import {
   updateServiceRequest,
   updateServiceRequestStatus,
   ServiceRequest,
-  ServiceRequestWithDetails,
   CreateServiceRequestInput,
   UpdateServiceRequestInput,
   ServiceRequestStatus,
@@ -163,7 +162,6 @@ export function useUpdateServiceRequestStatus() {
 // Re-export types for convenience
 export type {
   ServiceRequest,
-  ServiceRequestWithDetails,
   CreateServiceRequestInput,
   ServiceRequestStatus,
 };

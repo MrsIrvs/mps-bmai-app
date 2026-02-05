@@ -43,8 +43,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { data, error: fetchError } = await supabase
         .from('buildings')
         .select('*')
-        .eq('is_archived', false)
-        .order('name', { ascending: true });
+        .order('building_name', { ascending: true });
 
       if (fetchError) {
         console.error('Error fetching buildings:', fetchError);

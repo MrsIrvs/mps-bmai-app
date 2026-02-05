@@ -146,16 +146,16 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Building Name</Label>
-                  <Input defaultValue={selectedBuilding?.name} disabled />
+                  <Input value={selectedBuilding?.name || ''} disabled readOnly />
                 </div>
                 <div className="space-y-2">
                   <Label>Region</Label>
-                  <Input defaultValue={selectedBuilding?.region} disabled />
+                  <Input value={selectedBuilding?.region || ''} disabled readOnly />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Address</Label>
-                <Input defaultValue={selectedBuilding?.address || ''} disabled />
+                <Input value={selectedBuilding?.address || ''} disabled readOnly />
               </div>
               <p className="text-xs text-muted-foreground">
                 Contact an administrator to update building details.

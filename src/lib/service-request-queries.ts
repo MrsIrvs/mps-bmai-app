@@ -2,18 +2,13 @@
  * Service Request Query Utilities
  *
  * Type-safe query functions for service request CRUD operations.
- *
- * Usage:
- * import { getServiceRequests, createServiceRequest } from '@/lib/service-request-queries'
- *
- * const requests = await getServiceRequestsByBuilding(buildingId)
- * const newRequest = await createServiceRequest({ ... })
+ * Types match the ACTUAL database schema (verified via introspection).
  */
 
 import { supabase, executeQuery } from '@/integrations/supabase/client';
 
 // ============================================================================
-// TYPES (matching database schema)
+// TYPES (matching actual database schema)
 // ============================================================================
 
 export type ServiceRequestCategory = 'HVAC' | 'Electrical' | 'Fire' | 'Plumbing' | 'Hydraulic' | 'Security' | 'Lift' | 'Other';
@@ -43,34 +38,6 @@ export interface ServiceRequest {
   created_at: string;
   updated_at: string;
   is_active: boolean;
-}
-
-export interface ServiceRequestWithDetails extends ServiceRequest {
-  building_name?: string;
-  created_by_name?: string;
-  assigned_tech_name?: string;
-}
-
-export interface ServiceRequestPhoto {
-  photo_id: string;
-  request_id: string;
-  file_url: string;
-  file_name: string;
-  file_size_bytes: number | null;
-  mime_type: string | null;
-  caption: string | null;
-  uploaded_by_user_id: string;
-  created_at: string;
-}
-
-export interface ServiceRequestComment {
-  comment_id: string;
-  request_id: string;
-  user_id: string;
-  comment_type: 'note' | 'status_change' | 'assignment' | 'system';
-  comment_text: string;
-  metadata: Record<string, unknown> | null;
-  created_at: string;
 }
 
 export interface CreateServiceRequestInput {
@@ -153,16 +120,10 @@ export async function getServiceRequestById(requestId: string) {
 }
 
 /**
- * Get service requests with full details (using the view)
+ * Get service requests with full details
  */
 export async function getServiceRequestsWithDetails(buildingId: string) {
-  return executeQuery<ServiceRequestWithDetails[]>(
-    supabase
-      .from('service_requests_with_details')
-      .select('*')
-      .eq('building_id', buildingId)
-      .order('created_at', { ascending: false })
-  );
+  return getServiceRequestsByBuilding(buildingId, { includeResolved: true });
 }
 
 /**
@@ -355,182 +316,4 @@ export async function deleteServiceRequest(requestId: string) {
       .select()
       .single()
   );
-}
-
-// ============================================================================
-// SERVICE REQUEST PHOTOS
-// ============================================================================
-
-/**
- * Get photos for a service request
- */
-export async function getServiceRequestPhotos(requestId: string) {
-  return executeQuery<ServiceRequestPhoto[]>(
-    supabase
-      .from('service_request_photos')
-      .select('*')
-      .eq('request_id', requestId)
-      .order('created_at', { ascending: true })
-  );
-}
-
-/**
- * Add a photo to a service request
- */
-export async function addServiceRequestPhoto(
-  requestId: string,
-  uploadedByUserId: string,
-  fileUrl: string,
-  fileName: string,
-  options?: {
-    fileSizeBytes?: number;
-    mimeType?: string;
-    caption?: string;
-  }
-) {
-  return executeQuery<ServiceRequestPhoto>(
-    supabase
-      .from('service_request_photos')
-      .insert({
-        request_id: requestId,
-        uploaded_by_user_id: uploadedByUserId,
-        file_url: fileUrl,
-        file_name: fileName,
-        file_size_bytes: options?.fileSizeBytes || null,
-        mime_type: options?.mimeType || null,
-        caption: options?.caption || null,
-      })
-      .select()
-      .single()
-  );
-}
-
-/**
- * Delete a photo from a service request
- */
-export async function deleteServiceRequestPhoto(photoId: string) {
-  const { error } = await supabase
-    .from('service_request_photos')
-    .delete()
-    .eq('photo_id', photoId);
-
-  if (error) {
-    return { error: new Error(error.message) };
-  }
-
-  return { error: null };
-}
-
-// ============================================================================
-// SERVICE REQUEST COMMENTS
-// ============================================================================
-
-/**
- * Get comments for a service request
- */
-export async function getServiceRequestComments(requestId: string) {
-  return executeQuery<ServiceRequestComment[]>(
-    supabase
-      .from('service_request_comments')
-      .select('*')
-      .eq('request_id', requestId)
-      .order('created_at', { ascending: true })
-  );
-}
-
-/**
- * Add a comment to a service request
- */
-export async function addServiceRequestComment(
-  requestId: string,
-  userId: string,
-  commentText: string,
-  commentType: ServiceRequestComment['comment_type'] = 'note',
-  metadata?: Record<string, unknown>
-) {
-  return executeQuery<ServiceRequestComment>(
-    supabase
-      .from('service_request_comments')
-      .insert({
-        request_id: requestId,
-        user_id: userId,
-        comment_text: commentText,
-        comment_type: commentType,
-        metadata: metadata || null,
-      })
-      .select()
-      .single()
-  );
-}
-
-/**
- * Update a comment
- */
-export async function updateServiceRequestComment(
-  commentId: string,
-  commentText: string
-) {
-  return executeQuery<ServiceRequestComment>(
-    supabase
-      .from('service_request_comments')
-      .update({ comment_text: commentText })
-      .eq('comment_id', commentId)
-      .select()
-      .single()
-  );
-}
-
-/**
- * Delete a comment
- */
-export async function deleteServiceRequestComment(commentId: string) {
-  const { error } = await supabase
-    .from('service_request_comments')
-    .delete()
-    .eq('comment_id', commentId);
-
-  if (error) {
-    return { error: new Error(error.message) };
-  }
-
-  return { error: null };
-}
-
-// ============================================================================
-// PHOTO UPLOAD HELPER
-// ============================================================================
-
-/**
- * Upload a photo file and add it to a service request
- */
-export async function uploadServiceRequestPhoto(
-  requestId: string,
-  uploadedByUserId: string,
-  file: File
-) {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${requestId}/${Date.now()}.${fileExt}`;
-
-  // Upload to storage
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from('service-request-photos')
-    .upload(fileName, file, {
-      cacheControl: '3600',
-      upsert: false,
-    });
-
-  if (uploadError) {
-    return { data: null, error: new Error(uploadError.message) };
-  }
-
-  // Get public URL
-  const { data: { publicUrl } } = supabase.storage
-    .from('service-request-photos')
-    .getPublicUrl(uploadData.path);
-
-  // Add photo record
-  return addServiceRequestPhoto(requestId, uploadedByUserId, publicUrl, file.name, {
-    fileSizeBytes: file.size,
-    mimeType: file.type,
-  });
 }

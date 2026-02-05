@@ -58,40 +58,40 @@ export type Database = {
       }
       buildings: {
         Row: {
+          building_id: string
+          building_name: string
           address: string | null
-          client_user_ids: string[]
-          created_at: string
-          id: string
-          is_archived: boolean
-          name: string
-          notes: string | null
           region: string
-          status: string
+          client_user_ids: string[]
+          tech_user_ids: string[]
+          created_at: string
           updated_at: string
+          notes: string | null
+          status: string
         }
         Insert: {
+          building_id?: string
+          building_name: string
           address?: string | null
-          client_user_ids?: string[]
-          created_at?: string
-          id?: string
-          is_archived?: boolean
-          name: string
-          notes?: string | null
           region: string
-          status?: string
+          client_user_ids?: string[]
+          tech_user_ids?: string[]
+          created_at?: string
           updated_at?: string
+          notes?: string | null
+          status?: string
         }
         Update: {
+          building_id?: string
+          building_name?: string
           address?: string | null
-          client_user_ids?: string[]
-          created_at?: string
-          id?: string
-          is_archived?: boolean
-          name?: string
-          notes?: string | null
           region?: string
-          status?: string
+          client_user_ids?: string[]
+          tech_user_ids?: string[]
+          created_at?: string
           updated_at?: string
+          notes?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -226,52 +226,73 @@ export type Database = {
       }
       service_requests: {
         Row: {
-          id: string
+          request_id: string
           building_id: string
+          created_by_user_id: string
+          assigned_tech_id: string | null
           title: string
           description: string
-          category: Database["public"]["Enums"]["equipment_category"]
-          priority: Database["public"]["Enums"]["request_priority"]
-          status: Database["public"]["Enums"]["request_status"]
-          location: string | null
-          due_date: string | null
-          photo_urls: string[]
-          notes: string | null
-          created_by: string
+          category: string
+          priority: string
+          status: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by_user_id: string | null
+          source: string | null
+          chat_message_id: string | null
+          email_sent_at: string | null
+          email_to: string | null
+          email_message_id: string | null
+          external_ref: string | null
           created_at: string
           updated_at: string
+          is_active: boolean
         }
         Insert: {
-          id?: string
+          request_id?: string
           building_id: string
+          created_by_user_id: string
+          assigned_tech_id?: string | null
           title: string
           description: string
-          category: Database["public"]["Enums"]["equipment_category"]
-          priority?: Database["public"]["Enums"]["request_priority"]
-          status?: Database["public"]["Enums"]["request_status"]
-          location?: string | null
-          due_date?: string | null
-          photo_urls?: string[]
-          notes?: string | null
-          created_by: string
+          category: string
+          priority?: string
+          status?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          source?: string | null
+          chat_message_id?: string | null
+          email_sent_at?: string | null
+          email_to?: string | null
+          email_message_id?: string | null
+          external_ref?: string | null
           created_at?: string
           updated_at?: string
+          is_active?: boolean
         }
         Update: {
-          id?: string
+          request_id?: string
           building_id?: string
+          created_by_user_id?: string
+          assigned_tech_id?: string | null
           title?: string
           description?: string
-          category?: Database["public"]["Enums"]["equipment_category"]
-          priority?: Database["public"]["Enums"]["request_priority"]
-          status?: Database["public"]["Enums"]["request_status"]
-          location?: string | null
-          due_date?: string | null
-          photo_urls?: string[]
-          notes?: string | null
-          created_by?: string
+          category?: string
+          priority?: string
+          status?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          source?: string | null
+          chat_message_id?: string | null
+          email_sent_at?: string | null
+          email_to?: string | null
+          email_message_id?: string | null
+          external_ref?: string | null
           created_at?: string
           updated_at?: string
+          is_active?: boolean
         }
         Relationships: [
           {
@@ -279,7 +300,7 @@ export type Database = {
             columns: ["building_id"]
             isOneToOne: false
             referencedRelation: "buildings"
-            referencedColumns: ["id"]
+            referencedColumns: ["building_id"]
           }
         ]
       }

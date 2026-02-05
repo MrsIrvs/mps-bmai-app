@@ -18,6 +18,7 @@ import {
   useCreateServiceRequest,
   ServiceRequestStatus,
 } from '@/hooks/useServiceRequests';
+import { ServiceRequestSkeleton } from './ServiceRequestSkeleton';
 import { ServiceRequestPriority, ServiceRequestCategory } from '@/lib/service-request-queries';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -76,7 +77,7 @@ export function ServiceRequestList() {
   const [priority, setPriority] = useState<ServiceRequestPriority>('medium');
 
   // Fetch service requests using the hook
-  const { data: requests = [], isLoading, error } = useServiceRequests({ includeResolved: true });
+  const { data: requests = [], isLoading, isFetching, error, refetch } = useServiceRequests({ includeResolved: true });
   const createMutation = useCreateServiceRequest();
 
   const handleSubmit = async () => {
@@ -223,20 +224,28 @@ export function ServiceRequestList() {
         </div>
 
         {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        )}
+        {isLoading && <ServiceRequestSkeleton count={3} />}
 
         {/* Error State */}
         {error && (
           <Card className="border-destructive/50">
-            <CardContent className="flex items-center gap-3 py-6">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              <p className="text-sm text-destructive">
-                Failed to load service requests. Please try again.
-              </p>
+            <CardContent className="flex items-center justify-between py-6">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <p className="text-sm text-destructive">
+                  Failed to load service requests. Please try again.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="gap-2"
+              >
+                {isFetching && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isFetching ? 'Retrying...' : 'Retry'}
+              </Button>
             </CardContent>
           </Card>
         )}
